@@ -1,0 +1,30 @@
+{
+  "name": "johnny",
+  "version": "1.0.0",
+  "private": true,
+  "description": "",
+  "main": "build/index.js",
+  "scripts": {
+    "dev": "ts-node src/index.ts",
+    "build": "gulp build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "OQL",
+  "dependencies": {
+    "@newtykins/botkit": "^1.0.5",
+    "discord.js": "^14.11.0",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "@types/gulp": "^4.0.11",
+    "@types/gulp-uglify": "^3.0.8",
+    "@types/node": "^20.3.1",
+    "gulp": "^4.0.2",
+    "gulp-cli": "^2.3.0",
+    "gulp-typescript": "6.0.0-alpha.1",
+    "gulp-uglify": "^3.0.2",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.1.3"
+  }
+}
