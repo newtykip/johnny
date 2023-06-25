@@ -1,5 +1,9 @@
-use poise::serenity_prelude::{ChannelId, EmojiId};
-use serenity::builder::CreateEmbed;
+use poise::{
+    serenity_prelude::{ChannelId, EmojiId, Member, User},
+    CreateReply,
+};
+use rand::seq::SliceRandom;
+use serenity::{builder::CreateEmbed, utils::Colour};
 
 pub struct Data {
     pub johnny_images: Vec<String>,
@@ -19,26 +23,42 @@ pub const UPVOTE_ID: EmojiId = EmojiId(1120764904656351324);
 pub const DOWNVOTE_ID: EmojiId = EmojiId(1120764921555206336);
 
 /// Set the author of an embed to the author of the message
-pub async fn set_embed_author(ctx: &Context<'_>, embed: &mut CreateEmbed) {
-    let name: String;
+pub async fn create_embed(user: &User, member: Option<Member>) -> CreateEmbed {
+    let mut embed = CreateEmbed::default();
 
-    let created_by = ctx.author();
-    let avatar_option: Option<String>;
+    let mut name = user.name.clone();
+    let mut avatar_option = user.avatar_url();
 
-    if let Some(member) = ctx.author_member().await {
+    if let Some(member) = member {
         // if the author is a member, use their display name and avatar
         name = member.display_name().to_string();
         avatar_option = member.avatar_url()
-    } else {
-        // otherwise, use their username and default avatar
-        name = created_by.name.clone();
-        avatar_option = created_by.avatar_url()
-    };
+    }
 
     // if the avatar is none, use the default
     let avatar = avatar_option
-        .unwrap_or_else(|| created_by.default_avatar_url())
+        .unwrap_or_else(|| user.default_avatar_url())
         .to_string();
 
-    embed.author(|author| author.name(name).icon_url(avatar));
+    embed
+        .author(|author| author.name(name).icon_url(avatar))
+        .colour(Colour::from_rgb(192, 238, 255))
+        .clone()
+}
+
+/// Get a random johnny image
+pub fn johnny_image(data: &Data) -> String {
+    data.johnny_images
+        .choose(&mut rand::thread_rng())
+        .unwrap()
+        .clone()
+}
+
+/// Add an embed to a message
+pub fn apply_embed<'a, 'b>(
+    msg: &'b mut CreateReply<'a>,
+    embed: &CreateEmbed,
+) -> &'b mut CreateReply<'a> {
+    msg.embeds.push(embed.clone());
+    msg
 }

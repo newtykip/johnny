@@ -1,47 +1,39 @@
 use dotenvy_macro::dotenv;
 use imgurs::ImgurClient;
-use johnny::{Context, Data, Error};
-use johnny::{JOHNNY_GALLERY_ID, SUGGESTIONS_ID};
-use poise::serenity_prelude as serenity;
-use poise::Event;
+use johnny::{Context, Data, Error, JOHNNY_GALLERY_ID, SUGGESTIONS_ID};
+use poise::{serenity_prelude as serenity, Event};
 
 mod commands;
 mod events;
 
-/// Displays your or another user's account creation date
-// #[poise::command(slash_command, prefix_command)]
-// async fn age(
-//     ctx: Context<'_>,
-//     #[description = "Selected user"] user: Option<serenity::User>,
-// ) -> Result<(), Error> {
-//     let u = user.as_ref().unwrap_or_else(|| ctx.author());
-//     let response = format!("{}'s account was created at {}", u.name, u.created_at());
-//     ctx.say(response).await?;
-//     Ok(())
-// }
+pub async fn emit_event(event: &Event<'_>, ctx: &serenity::Context, data: &Data) {
+    match event {
+        // ready
+        Event::Ready { data_about_bot } => events::ready::run(&ctx, &data_about_bot).await,
+
+        // thread create
+        Event::ThreadCreate { thread } => {
+            if thread.parent_id == Some(SUGGESTIONS_ID) {
+                events::suggestion_made::run(&ctx, &thread).await;
+            }
+        }
+
+        // member join
+        Event::GuildMemberAddition { new_member } => {
+            events::member_join::run(&ctx, &new_member, &data).await
+        }
+        _ => {}
+    }
+}
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), Error> {
     poise::Framework::builder()
         .options(poise::FrameworkOptions {
-            commands: vec![commands::meow()],
-            event_handler: |ctx, event, _framework, _data| {
+            commands: vec![commands::meow(), commands::emit()],
+            event_handler: |ctx, event, _framework, data| {
                 Box::pin(async move {
-                    match event {
-                        // ready
-                        Event::Ready { data_about_bot } => {
-                            events::ready::run(&ctx, &data_about_bot).await;
-                        }
-
-                        // thread create
-                        Event::ThreadCreate { thread } => {
-                            if thread.parent_id == Some(SUGGESTIONS_ID) {
-                                events::suggestion_made::run(&ctx, &thread).await;
-                            }
-                        }
-                        _ => {}
-                    }
-
+                    emit_event(&event, &ctx, &data).await;
                     Ok(())
                 })
             },
@@ -66,7 +58,10 @@ async fn main() {
                 })
             })
         })
-        .run()
-        .await
-        .unwrap()
+        .build()
+        .await?
+        .start_autosharded()
+        .await?;
+
+    Ok(())
 }
