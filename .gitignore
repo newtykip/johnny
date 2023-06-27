@@ -15,3 +15,5 @@ Cargo.lock
 
 # other
 .env
+
+emit.rs

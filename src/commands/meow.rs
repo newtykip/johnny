@@ -1,5 +1,5 @@
 use crate::{Context, Error};
-use johnny::{apply_embed, create_embed, johnny_image};
+use johnny::{apply_embed, create_embed, johnny_image, logger};
 
 /// meow! (checks ping)
 #[poise::command(slash_command)]
@@ -25,6 +25,11 @@ pub async fn meow(ctx: Context<'_>) -> Result<(), Error> {
     embed.title(format!("meow! ({} ms)", ping));
 
     reply.edit(ctx, |msg| apply_embed(msg, &embed)).await?;
+
+    ctx.data()
+        .logger
+        .send(logger::Entry::info("meow!".into()))
+        .await?;
 
     Ok(())
 }

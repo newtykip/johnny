@@ -1,12 +1,17 @@
+mod control_panel;
+pub use control_panel::run_tui;
+use debug_ignore::DebugIgnore;
 use poise::{
     serenity_prelude::{ChannelId, EmojiId, Member, User},
     CreateReply,
 };
 use rand::seq::SliceRandom;
 use serenity::{builder::CreateEmbed, utils::Colour};
+use tokio::sync::mpsc;
 
 pub struct Data {
     pub johnny_images: Vec<String>,
+    pub logger: logger::Sender,
 }
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 pub type Context<'a> = poise::Context<'a, Data, Error>;
@@ -61,4 +66,72 @@ pub fn apply_embed<'a, 'b>(
 ) -> &'b mut CreateReply<'a> {
     msg.embeds.push(embed.clone());
     msg
+}
+
+// logger
+pub mod logger {
+    use std::fmt::Display;
+
+    use tokio::sync::mpsc;
+
+    #[derive(Debug)]
+    pub enum Level {
+        Info,
+    }
+
+    impl Display for Level {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            match self {
+                Level::Info => write!(f, "INFO"),
+            }
+        }
+    }
+
+    #[derive(Debug)]
+    pub struct Entry {
+        pub level: Level,
+        pub message: String,
+    }
+
+    impl Entry {
+        pub fn info(message: String) -> Self {
+            Self {
+                level: Level::Info,
+                message,
+            }
+        }
+    }
+
+    pub type Sender = mpsc::Sender<Entry>;
+    pub type Reciever = mpsc::Receiver<Entry>;
+}
+
+pub struct BotRecievers {
+    pub log: logger::Reciever,
+}
+
+pub struct BotSenders {
+    pub log: mpsc::Sender<logger::Entry>,
+}
+
+#[derive(Debug)]
+pub struct Bot {
+    pub senders: DebugIgnore<BotSenders>,
+}
+
+impl Bot {
+    /// Initialise the state
+    ///
+    /// Returns the state, the online receiver, and the log receiver
+    pub fn new() -> (Self, BotRecievers) {
+        // start channels
+        let (log_tx, log_rx) = mpsc::channel(32);
+
+        (
+            Self {
+                senders: BotSenders { log: log_tx }.into(),
+            },
+            BotRecievers { log: log_rx },
+        )
+    }
 }
