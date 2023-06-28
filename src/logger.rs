@@ -6,6 +6,7 @@ use owo_colors::{
     OwoColorize,
     Stream::Stdout,
 };
+use poise::serenity_prelude::{Guild, User};
 use tokio::sync::mpsc;
 
 pub struct Logger {
@@ -24,6 +25,20 @@ impl Logger {
         Self {}
     }
 
+    #[cfg(feature = "tui")]
+    async fn log(&self, level: Level, message: String, ctx: Option<&Context<'_>>) {
+        let entry = Entry {
+            level,
+            message,
+            timestamp: Local::now(),
+            guild: ctx.map(|ctx| ctx.guild()).flatten(),
+            user: ctx.map(|ctx| ctx.author().clone()),
+        };
+
+        self.sender.send(entry).await.unwrap();
+    }
+
+    #[cfg(not(feature = "tui"))]
     async fn log(&self, level: Level, message: String) {
         let entry = Entry {
             level,
@@ -31,18 +46,38 @@ impl Logger {
             timestamp: Local::now(),
         };
 
-        #[cfg(feature = "tui")]
-        self.sender.send(entry).await.unwrap();
-
-        #[cfg(not(feature = "tui"))]
         println!("{}", entry.to_string());
     }
 
+    #[cfg(feature = "tui")]
+    pub async fn info(&self, message: String, ctx: Option<&Context<'_>>) {
+        self.log(Level::Info, message, ctx).await
+    }
+
+    #[cfg(not(feature = "tui"))]
     pub async fn info(&self, message: String) {
         self.log(Level::Info, message).await
     }
 
     pub async fn command(&self, ctx: &Context<'_>) {
+        #[cfg(feature = "tui")]
+        self.log(
+            Level::Command,
+            format!(
+                "{} ran {} in {}",
+                ctx.author().name,
+                ctx.command().name,
+                if let Some(guild) = ctx.guild() {
+                    guild.name
+                } else {
+                    "DMs".to_string()
+                }
+            ),
+            Some(ctx),
+        )
+        .await;
+
+        #[cfg(not(feature = "tui"))]
         self.log(
             Level::Command,
             format!(
@@ -56,7 +91,7 @@ impl Logger {
                 }
             ),
         )
-        .await
+        .await;
     }
 }
 
@@ -75,11 +110,21 @@ impl ToString for Level {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct Entry {
     pub timestamp: DateTime<Local>,
     pub level: Level,
     pub message: String,
+    #[cfg(feature = "tui")]
+    pub guild: Option<Guild>,
+    #[cfg(feature = "tui")]
+    pub user: Option<User>,
+}
+
+impl PartialEq for Entry {
+    fn eq(&self, other: &Self) -> bool {
+        self.timestamp == other.timestamp
+    }
 }
 
 impl ToString for Entry {

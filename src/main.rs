@@ -88,7 +88,7 @@ async fn main() -> Result<(), Error> {
 
     if !features.is_empty() {
         logger
-            .info(format!("Enabled features: {}", features.join(", ")))
+            .info(format!("Enabled features: {}", features.join(", ")), None)
             .await;
     }
 

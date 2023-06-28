@@ -3,7 +3,7 @@ use poise::serenity_prelude::{Activity, Context, Ready};
 
 pub async fn run(ctx: &Context, _ready: &Ready, data: &Data) {
     data.logger
-        .info(format!("Logged in as {}", _ready.user.name))
+        .info(format!("Logged in as {}", _ready.user.name), None)
         .await;
 
     // set the activity

@@ -7,7 +7,6 @@ use crossterm::event::{self, Event, KeyCode};
 use johnny::logger;
 use log::log;
 use main::main;
-use serenity::model::Permissions;
 use std::{
     io,
     time::{Duration, Instant},
@@ -16,6 +15,7 @@ use tui::{backend::Backend, Terminal};
 
 // todo: first time setup
 // todo: configuration
+// todo: make button highlights only appear over text
 
 #[allow(dead_code)]
 pub enum Views {
@@ -41,21 +41,15 @@ pub fn run_tui<B: Backend>(
     let mut last_tick = Instant::now();
     let mut logs: Vec<logger::Entry> = vec![];
     let mut selected_side = SelectedSide::Controls;
-    let mut selected_index = 0;
+    let mut vertical_index = 0;
+    let mut horizontal_index = 0;
     let mut current_view = Views::Main;
-
-    // must define control buttons here so i can get the length in the controls function
-
-    // generate invite
-    let permissions = Permissions::default();
-
-    println!("{:?}", permissions);
 
     loop {
         // draw ui
         terminal.draw(|f| match current_view {
-            Views::Main => main(f, &mut logs.clone(), &selected_side, &selected_index),
-            Views::Log => log(f, &logs[selected_index]),
+            Views::Main => main(f, &mut logs.clone(), &selected_side, &mut vertical_index),
+            Views::Log => log(f, &logs[vertical_index], &horizontal_index),
             _ => unimplemented!(),
         })?;
 
@@ -80,10 +74,12 @@ pub fn run_tui<B: Backend>(
                         &key.code,
                         &mut logs,
                         &mut selected_side,
-                        &mut selected_index,
+                        &mut vertical_index,
                         &mut current_view,
                     ),
-                    Views::Log => log::controls(&key.code, &mut current_view),
+                    Views::Log => {
+                        log::controls(&key.code, &mut current_view, &mut horizontal_index)
+                    }
                     _ => {}
                 }
             }
