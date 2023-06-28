@@ -7,36 +7,54 @@ use crossterm::event::{self, Event, KeyCode};
 use johnny::logger;
 use log::log;
 use main::main;
+use serenity::model::Permissions;
 use std::{
     io,
     time::{Duration, Instant},
 };
-use tokio::sync::oneshot;
 use tui::{backend::Backend, Terminal};
 
+// todo: first time setup
+// todo: configuration
+
 #[allow(dead_code)]
-enum Views {
+pub enum Views {
     Main,
     Log,
-    Emitter, // todo: implement
-    Guild,   // todo: implement
+    Emitter,     // todo: implement
+    Guild,       // todo: implement
+    User,        // todo: implement
+    GuildMember, // todo: implement
+}
+
+#[derive(PartialEq)]
+pub enum SelectedSide {
+    Controls,
+    Logs,
 }
 
 pub fn run_tui<B: Backend>(
     terminal: &mut Terminal<B>,
     tick_rate: Duration,
     mut log_reciever: logger::Reciever,
-    exit_sender: oneshot::Sender<bool>,
 ) -> io::Result<()> {
     let mut last_tick = Instant::now();
     let mut logs: Vec<logger::Entry> = vec![];
+    let mut selected_side = SelectedSide::Controls;
     let mut selected_index = 0;
     let mut current_view = Views::Main;
+
+    // must define control buttons here so i can get the length in the controls function
+
+    // generate invite
+    let permissions = Permissions::default();
+
+    println!("{:?}", permissions);
 
     loop {
         // draw ui
         terminal.draw(|f| match current_view {
-            Views::Main => main(f, &mut logs.clone(), logs.get(selected_index)),
+            Views::Main => main(f, &mut logs.clone(), &selected_side, &selected_index),
             Views::Log => log(f, &logs[selected_index]),
             _ => unimplemented!(),
         })?;
@@ -53,39 +71,19 @@ pub fn run_tui<B: Backend>(
         if event::poll(timeout)? {
             if let Event::Key(key) = event::read()? {
                 match key.code {
-                    KeyCode::Char('q') => {
-                        exit_sender.send(true).expect("failed to send exit signal");
-                        return Ok(());
-                    }
+                    KeyCode::Char('q') => return Ok(()),
                     _ => {}
                 }
 
                 match current_view {
-                    Views::Main => match key.code {
-                        KeyCode::Char('c') => logs.clear(),
-                        KeyCode::Up => {
-                            selected_index = selected_index.saturating_sub(1);
-                        }
-                        KeyCode::Down => {
-                            let log_count = logs.len() as i32;
-
-                            if (selected_index as i32) < log_count - 1 {
-                                selected_index += 1;
-                            }
-                        }
-                        KeyCode::Enter => {
-                            if !logs.is_empty() {
-                                current_view = Views::Log;
-                            }
-                        }
-                        _ => {}
-                    },
-                    Views::Log => match key.code {
-                        KeyCode::Backspace => {
-                            current_view = Views::Main;
-                        }
-                        _ => {}
-                    },
+                    Views::Main => main::controls(
+                        &key.code,
+                        &mut logs,
+                        &mut selected_side,
+                        &mut selected_index,
+                        &mut current_view,
+                    ),
+                    Views::Log => log::controls(&key.code, &mut current_view),
                     _ => {}
                 }
             }

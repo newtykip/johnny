@@ -1,26 +1,41 @@
 use crate::Context;
 use chrono::{DateTime, Local};
-use std::fmt::Display;
+#[cfg(not(feature = "tui"))]
+use owo_colors::{
+    colors::{Cyan, Green},
+    OwoColorize,
+    Stream::Stdout,
+};
 use tokio::sync::mpsc;
 
 pub struct Logger {
+    #[cfg(feature = "tui")]
     sender: Sender,
 }
 
 impl Logger {
+    #[cfg(feature = "tui")]
     pub fn new(sender: Sender) -> Self {
         Self { sender }
     }
 
+    #[cfg(not(feature = "tui"))]
+    pub fn new() -> Self {
+        Self {}
+    }
+
     async fn log(&self, level: Level, message: String) {
-        self.sender
-            .send(Entry {
-                level,
-                message,
-                timestamp: Local::now(),
-            })
-            .await
-            .unwrap()
+        let entry = Entry {
+            level,
+            message,
+            timestamp: Local::now(),
+        };
+
+        #[cfg(feature = "tui")]
+        self.sender.send(entry).await.unwrap();
+
+        #[cfg(not(feature = "tui"))]
+        println!("{}", entry.to_string());
     }
 
     pub async fn info(&self, message: String) {
@@ -51,11 +66,11 @@ pub enum Level {
     Command,
 }
 
-impl Display for Level {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl ToString for Level {
+    fn to_string(&self) -> String {
         match self {
-            Level::Info => write!(f, "INFO"),
-            Level::Command => write!(f, "COMMAND"),
+            Level::Info => "INFO".to_string(),
+            Level::Command => "COMMAND".to_string(),
         }
     }
 }
@@ -65,6 +80,23 @@ pub struct Entry {
     pub timestamp: DateTime<Local>,
     pub level: Level,
     pub message: String,
+}
+
+impl ToString for Entry {
+    fn to_string(&self) -> String {
+        let timestamp = self.timestamp.format("%Y-%m-%d %H:%M:%S");
+        let level = format!("[{}]", self.level.to_string());
+
+        #[cfg(not(feature = "tui"))]
+        let timestamp = timestamp.if_supports_color(Stdout, |text| text.fg::<Cyan>());
+        #[cfg(not(feature = "tui"))]
+        let level = level.if_supports_color(Stdout, |text| match self.level {
+            Level::Info => text.bold().to_string(),
+            Level::Command => text.fg::<Green>().bold().to_string(),
+        });
+
+        format!("{} {} {}", timestamp, level, self.message)
+    }
 }
 
 pub type Sender = mpsc::Sender<Entry>;

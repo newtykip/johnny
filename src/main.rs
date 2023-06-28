@@ -1,7 +1,9 @@
 mod commands;
 mod events;
+#[cfg(feature = "tui")]
 mod views;
 
+#[cfg(feature = "tui")]
 use crossterm::{
     event::{DisableMouseCapture, EnableMouseCapture},
     execute,
@@ -10,13 +12,17 @@ use crossterm::{
 use dotenvy_macro::dotenv;
 #[cfg(feature = "johnny")]
 use imgurs::ImgurClient;
-use johnny::{logger::Logger, Bot, Context, Data, Error};
+use johnny::{logger::Logger, Context, Data, Error};
+#[cfg(feature = "tui")]
+use johnny::{logger::Reciever as LogReciever, Bot};
 #[cfg(feature = "johnny")]
 use johnny::{JOHNNY_GALLERY_ID, SUGGESTIONS_ID};
 use poise::{serenity_prelude as serenity, Command, Event};
+#[cfg(feature = "tui")]
 use std::{io, time::Duration};
-use tokio::sync::oneshot;
+#[cfg(feature = "tui")]
 use tui::{backend::CrosstermBackend, Terminal};
+#[cfg(feature = "tui")]
 use views::run_tui;
 
 pub async fn emit_event(event: &Event<'_>, ctx: &serenity::Context, data: &Data) {
@@ -36,11 +42,43 @@ pub async fn emit_event(event: &Event<'_>, ctx: &serenity::Context, data: &Data)
     }
 }
 
+#[cfg(feature = "tui")]
+fn tui_logic(log_reciever: LogReciever) {
+    enable_raw_mode().expect("failed to setup terminal");
+    let mut stdout = io::stdout();
+    execute!(stdout, EnterAlternateScreen, EnableMouseCapture).expect("failed to setup terminal");
+    let backend = CrosstermBackend::new(stdout);
+    let mut terminal = Terminal::new(backend).expect("failed to setup terminal");
+
+    // create app and run it
+    let tick_rate = Duration::from_millis(250);
+    let res = run_tui(&mut terminal, tick_rate, log_reciever);
+
+    // restore terminal
+    disable_raw_mode().expect("failed to restore terminal");
+    execute!(
+        terminal.backend_mut(),
+        LeaveAlternateScreen,
+        DisableMouseCapture
+    )
+    .expect("failed to restore terminal");
+    terminal.show_cursor().expect("failed to restore terminal");
+
+    if let Err(err) = res {
+        println!("{:?}", err)
+    }
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    let (exit_tx, mut exit_rx) = oneshot::channel::<bool>();
+    #[cfg(feature = "tui")]
     let (bot, recievers) = Bot::new();
+
+    #[cfg(feature = "tui")]
     let logger = Logger::new(bot.senders.log.clone());
+
+    #[cfg(not(feature = "tui"))]
+    let logger = Logger::new();
 
     // list enabled features
     #[allow(unused_mut)]
@@ -95,47 +133,23 @@ async fn main() -> Result<(), Error> {
         .build()
         .await?;
 
-    // bot thread
+    // spawn bot
+    #[cfg(feature = "tui")]
     tokio::spawn(async move {
         framework.start_autosharded().await.unwrap();
     });
 
-    // tui thread
-    tokio::spawn(async move {
-        // setup terminal
-        enable_raw_mode().expect("failed to setup terminal");
-        let mut stdout = io::stdout();
-        execute!(stdout, EnterAlternateScreen, EnableMouseCapture)
-            .expect("failed to setup terminal");
-        let backend = CrosstermBackend::new(stdout);
-        let mut terminal = Terminal::new(backend).expect("failed to setup terminal");
+    #[cfg(not(feature = "tui"))]
+    framework.start_autosharded().await.unwrap();
 
-        // create app and run it
-        let tick_rate = Duration::from_millis(250);
-        let res = run_tui(&mut terminal, tick_rate, recievers.log, exit_tx);
+    // setup terminal if tui feature is enabled
+    #[cfg(feature = "tui")]
+    tui_logic(recievers.log);
 
-        // restore terminal
-        disable_raw_mode().expect("failed to restore terminal");
-        execute!(
-            terminal.backend_mut(),
-            LeaveAlternateScreen,
-            DisableMouseCapture
-        )
-        .expect("failed to restore terminal");
-        terminal.show_cursor().expect("failed to restore terminal");
+    // otherwise block the thread
+    #[cfg(not(feature = "tui"))]
+    loop {}
 
-        if let Err(err) = res {
-            println!("{:?}", err)
-        }
-    });
-
-    loop {
-        if let Ok(exit) = exit_rx.try_recv() {
-            if exit {
-                break;
-            }
-        }
-    }
-
+    #[allow(unreachable_code)]
     Ok(())
 }

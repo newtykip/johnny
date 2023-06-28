@@ -1,6 +1,5 @@
 pub mod logger;
 
-use debug_ignore::DebugIgnore;
 use poise::{
     serenity_prelude::{ChannelId, EmojiId, Member, User},
     CreateReply,
@@ -75,11 +74,12 @@ pub struct BotSenders {
     pub log: mpsc::Sender<logger::Entry>,
 }
 
-#[derive(Debug)]
+#[cfg(feature = "tui")]
 pub struct Bot {
-    pub senders: DebugIgnore<BotSenders>,
+    pub senders: BotSenders,
 }
 
+#[cfg(feature = "tui")]
 impl Bot {
     /// Initialise the state
     ///
