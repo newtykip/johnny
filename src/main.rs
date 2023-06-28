@@ -1,7 +1,7 @@
 mod commands;
 mod events;
+mod views;
 
-use ::tui::{backend::CrosstermBackend, Terminal};
 use crossterm::{
     event::{DisableMouseCapture, EnableMouseCapture},
     execute,
@@ -10,12 +10,14 @@ use crossterm::{
 use dotenvy_macro::dotenv;
 #[cfg(feature = "johnny")]
 use imgurs::ImgurClient;
-use johnny::{logger::Logger, run_tui, Bot, Context, Data, Error};
+use johnny::{logger::Logger, Bot, Context, Data, Error};
 #[cfg(feature = "johnny")]
 use johnny::{JOHNNY_GALLERY_ID, SUGGESTIONS_ID};
 use poise::{serenity_prelude as serenity, Command, Event};
 use std::{io, time::Duration};
 use tokio::sync::oneshot;
+use tui::{backend::CrosstermBackend, Terminal};
+use views::run_tui;
 
 pub async fn emit_event(event: &Event<'_>, ctx: &serenity::Context, data: &Data) {
     match event {

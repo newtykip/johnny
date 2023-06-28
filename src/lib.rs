@@ -1,7 +1,5 @@
-mod control_panel;
 pub mod logger;
 
-pub use control_panel::run_tui;
 use debug_ignore::DebugIgnore;
 use poise::{
     serenity_prelude::{ChannelId, EmojiId, Member, User},
