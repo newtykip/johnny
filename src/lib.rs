@@ -1,17 +1,19 @@
 mod control_panel;
+pub mod logger;
+
 pub use control_panel::run_tui;
 use debug_ignore::DebugIgnore;
 use poise::{
     serenity_prelude::{ChannelId, EmojiId, Member, User},
     CreateReply,
 };
-use rand::seq::SliceRandom;
 use serenity::{builder::CreateEmbed, utils::Colour};
 use tokio::sync::mpsc;
 
 pub struct Data {
+    #[cfg(feature = "johnny")]
     pub johnny_images: Vec<String>,
-    pub logger: logger::Sender,
+    pub logger: logger::Logger,
 }
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 pub type Context<'a> = poise::Context<'a, Data, Error>;
@@ -41,9 +43,7 @@ pub async fn create_embed(user: &User, member: Option<Member>) -> CreateEmbed {
     }
 
     // if the avatar is none, use the default
-    let avatar = avatar_option
-        .unwrap_or_else(|| user.default_avatar_url())
-        .to_string();
+    let avatar = avatar_option.unwrap_or_else(|| user.default_avatar_url());
 
     embed
         .author(|author| author.name(name).icon_url(avatar))
@@ -52,6 +52,7 @@ pub async fn create_embed(user: &User, member: Option<Member>) -> CreateEmbed {
 }
 
 /// Get a random johnny image
+#[cfg(feature = "johnny")]
 pub fn johnny_image(data: &Data) -> String {
     data.johnny_images
         .choose(&mut rand::thread_rng())
@@ -66,44 +67,6 @@ pub fn apply_embed<'a, 'b>(
 ) -> &'b mut CreateReply<'a> {
     msg.embeds.push(embed.clone());
     msg
-}
-
-// logger
-pub mod logger {
-    use std::fmt::Display;
-
-    use tokio::sync::mpsc;
-
-    #[derive(Debug)]
-    pub enum Level {
-        Info,
-    }
-
-    impl Display for Level {
-        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-            match self {
-                Level::Info => write!(f, "INFO"),
-            }
-        }
-    }
-
-    #[derive(Debug)]
-    pub struct Entry {
-        pub level: Level,
-        pub message: String,
-    }
-
-    impl Entry {
-        pub fn info(message: String) -> Self {
-            Self {
-                level: Level::Info,
-                message,
-            }
-        }
-    }
-
-    pub type Sender = mpsc::Sender<Entry>;
-    pub type Reciever = mpsc::Receiver<Entry>;
 }
 
 pub struct BotRecievers {

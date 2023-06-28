@@ -1,3 +1,3 @@
-mod meow;
+mod ping;
 
-pub use meow::meow;
+pub use ping::ping;

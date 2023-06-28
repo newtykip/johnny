@@ -13,6 +13,10 @@ use tui::{
     Frame, Terminal,
 };
 
+// todo: add event emitter submenu
+// todo: add guild viewer submenu
+// todo: allow logs to be viewed for extra details, including what invoked the log, who was responsible, etc
+
 pub fn run_tui<B: Backend>(
     terminal: &mut Terminal<B>,
     tick_rate: Duration,
@@ -21,10 +25,11 @@ pub fn run_tui<B: Backend>(
 ) -> io::Result<()> {
     let mut last_tick = Instant::now();
     let mut logs: Vec<logger::Entry> = vec![];
+    let mut selected_index = 0;
 
     loop {
         // draw ui
-        terminal.draw(|f| ui(f, &mut logs))?;
+        terminal.draw(|f| logs_view(f, &mut logs.clone(), logs.get(selected_index)))?;
 
         // receive logs
         if let Ok(log) = log_reciever.try_recv() {
@@ -42,6 +47,19 @@ pub fn run_tui<B: Backend>(
                         exit_sender.send(true).expect("failed to send exit signal");
                         return Ok(());
                     }
+                    KeyCode::Char('c') => logs.clear(),
+                    KeyCode::Up => {
+                        if selected_index > 0 {
+                            selected_index -= 1;
+                        }
+                    }
+                    KeyCode::Down => {
+                        let log_count = logs.len() as i32;
+
+                        if (selected_index as i32) < log_count - 1 {
+                            selected_index += 1;
+                        }
+                    }
                     _ => {}
                 }
             }
@@ -53,7 +71,11 @@ pub fn run_tui<B: Backend>(
     }
 }
 
-fn ui<B: Backend>(f: &mut Frame<B>, logs: &mut Vec<logger::Entry>) {
+fn logs_view<B: Backend>(
+    f: &mut Frame<B>,
+    logs: &mut [logger::Entry],
+    selected_log: Option<&logger::Entry>,
+) {
     // Split the screen into 2 vertical portions
     let chunks = Layout::default()
         .direction(Direction::Horizontal)
@@ -67,13 +89,16 @@ fn ui<B: Backend>(f: &mut Frame<B>, logs: &mut Vec<logger::Entry>) {
         .border_type(BorderType::Plain);
 
     // and a message telling you the controls
-    let controls = Paragraph::new("Press q to quit")
-        .style(
-            Style::default()
-                .fg(Color::DarkGray)
-                .add_modifier(Modifier::BOLD),
-        )
-        .block(control_block);
+    let controls = Paragraph::new(
+        r#"Press c to clear logs
+Press q to quit"#,
+    )
+    .style(
+        Style::default()
+            .fg(Color::DarkGray)
+            .add_modifier(Modifier::BOLD),
+    )
+    .block(control_block);
     f.render_widget(controls, chunks[0]);
 
     // Right side has logs
@@ -85,7 +110,18 @@ fn ui<B: Backend>(f: &mut Frame<B>, logs: &mut Vec<logger::Entry>) {
     // todo: make logs scroll
     let logs = logs
         .iter()
-        .map(|log| ListItem::new(log.message.clone()))
+        .map(|log| {
+            let mut style = Style::default().fg(match log.level {
+                logger::Level::Info => Color::Gray,
+                logger::Level::Command => Color::DarkGray,
+            });
+
+            if Some(log) == selected_log {
+                style = style.bg(Color::Black);
+            }
+
+            ListItem::new(format!("{} [{}] {}", log.timestamp, log.level, log.message)).style(style)
+        })
         .collect::<Vec<_>>();
 
     let log = List::new(logs).block(log_block).highlight_symbol(">>");
