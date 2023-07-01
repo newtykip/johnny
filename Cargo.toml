@@ -5,11 +5,17 @@ edition = "2021"
 
 [features]
 default = ["tui"]
-tui = ["dep:tui", "dep:crossterm"]
+
+# general
+tui = ["dep:tui", "dep:crossterm", "dep:ansi-to-tui"]
 johnny = ["dep:imgurs"]
 verbose = []
 
+# modules
+autorole = []
+
 [dependencies]
+ansi-to-tui = { version = "2.0.2", optional = true }
 chrono = "0.4.26"
 crossterm = { version = "0.26.1", optional = true }
 dotenvy_macro = "0.15.7"

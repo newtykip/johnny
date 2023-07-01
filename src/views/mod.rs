@@ -1,17 +1,26 @@
 #![allow(clippy::single_match)]
 
+// todo: look into porting to ratatui
+
 mod log;
 mod main;
 
-use crossterm::event::{self, Event, KeyCode};
-use johnny::logger;
+use crossterm::{
+    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
+    execute,
+    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+};
+use johnny::logger::{self, Reciever};
 use log::log;
 use main::main;
 use std::{
     io,
     time::{Duration, Instant},
 };
-use tui::{backend::Backend, Terminal};
+use tui::{
+    backend::{Backend, CrosstermBackend},
+    Terminal,
+};
 
 // todo: first time setup
 // todo: configuration
@@ -27,10 +36,30 @@ pub enum Views {
     GuildMember, // todo: implement
 }
 
-#[derive(PartialEq)]
-pub enum SelectedSide {
-    Controls,
-    Logs,
+pub fn prelude(log_reciever: Reciever) {
+    enable_raw_mode().expect("failed to setup terminal");
+    let mut stdout = io::stdout();
+    execute!(stdout, EnterAlternateScreen, EnableMouseCapture).expect("failed to setup terminal");
+    let backend = CrosstermBackend::new(stdout);
+    let mut terminal = Terminal::new(backend).expect("failed to setup terminal");
+
+    // create app and run it
+    let tick_rate = Duration::from_millis(250);
+    let res = run_tui(&mut terminal, tick_rate, log_reciever);
+
+    // restore terminal
+    disable_raw_mode().expect("failed to restore terminal");
+    execute!(
+        terminal.backend_mut(),
+        LeaveAlternateScreen,
+        DisableMouseCapture
+    )
+    .expect("failed to restore terminal");
+    terminal.show_cursor().expect("failed to restore terminal");
+
+    if let Err(err) = res {
+        println!("{:?}", err)
+    }
 }
 
 pub fn run_tui<B: Backend>(
@@ -40,7 +69,6 @@ pub fn run_tui<B: Backend>(
 ) -> io::Result<()> {
     let mut last_tick = Instant::now();
     let mut logs: Vec<logger::Entry> = vec![];
-    let mut selected_side = SelectedSide::Controls;
     let mut vertical_index = 0;
     let mut horizontal_index = 0;
     let mut current_view = Views::Main;
@@ -48,7 +76,7 @@ pub fn run_tui<B: Backend>(
     loop {
         // draw ui
         terminal.draw(|f| match current_view {
-            Views::Main => main(f, &mut logs.clone(), &selected_side, &mut vertical_index),
+            Views::Main => main(f, &mut logs.clone(), &mut vertical_index),
             Views::Log => log(f, &logs[vertical_index], &horizontal_index),
             _ => unimplemented!(),
         })?;
@@ -65,18 +93,14 @@ pub fn run_tui<B: Backend>(
         if event::poll(timeout)? {
             if let Event::Key(key) = event::read()? {
                 match key.code {
-                    KeyCode::Char('q') => return Ok(()),
+                    KeyCode::Char('q') | KeyCode::Esc => return Ok(()),
                     _ => {}
                 }
 
                 match current_view {
-                    Views::Main => main::controls(
-                        &key.code,
-                        &mut logs,
-                        &mut selected_side,
-                        &mut vertical_index,
-                        &mut current_view,
-                    ),
+                    Views::Main => {
+                        main::controls(&key.code, &mut logs, &mut vertical_index, &mut current_view)
+                    }
                     Views::Log => {
                         log::controls(&key.code, &mut current_view, &mut horizontal_index)
                     }

@@ -3,29 +3,51 @@ mod events;
 #[cfg(feature = "tui")]
 mod views;
 
-#[cfg(feature = "tui")]
-use crossterm::{
-    event::{DisableMouseCapture, EnableMouseCapture},
-    execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-};
 use dotenvy_macro::dotenv;
 #[cfg(feature = "johnny")]
 use imgurs::ImgurClient;
-use johnny::{logger::Logger, Context, Data, Error};
 #[cfg(feature = "tui")]
-use johnny::{logger::Reciever as LogReciever, Bot};
+use johnny::Bot;
+use johnny::{logger::Logger, Context, Data, Error};
 #[cfg(feature = "johnny")]
 use johnny::{JOHNNY_GALLERY_ID, SUGGESTIONS_ID};
-use poise::{serenity_prelude as serenity, Command, Event};
-#[cfg(feature = "tui")]
-use std::{io, time::Duration};
-#[cfg(feature = "tui")]
-use tui::{backend::CrosstermBackend, Terminal};
-#[cfg(feature = "tui")]
-use views::run_tui;
+use poise::{serenity_prelude as serenity, Command, Event, Framework};
+use std::sync::Arc;
 
-pub async fn emit_event(event: &Event<'_>, ctx: &serenity::Context, data: &Data) {
+fn create_feature_list<'t>() -> Vec<&'t str> {
+    let mut features = vec![];
+
+    if cfg!(feature = "tui") {
+        features.push("tui");
+    }
+
+    if cfg!(feature = "johnny") {
+        features.push("johnny");
+    }
+
+    if cfg!(feature = "verbose") {
+        features.push("verbose");
+    }
+
+    if cfg!(feature = "autorole") {
+        features.push("autorole");
+    }
+
+    features
+}
+
+async fn start_bot(framework: Arc<Framework<Data, Error>>) {
+    framework
+        .start_autosharded()
+        .await
+        .expect("should have been able to start bot")
+}
+
+pub async fn emit_event(
+    event: &Event<'_>,
+    ctx: &serenity::Context,
+    data: &Data,
+) -> Result<(), Error> {
     match event {
         // ready
         Event::Ready { data_about_bot } => events::ready::run(ctx, data_about_bot, data).await,
@@ -34,38 +56,13 @@ pub async fn emit_event(event: &Event<'_>, ctx: &serenity::Context, data: &Data)
         #[cfg(feature = "johnny")]
         Event::ThreadCreate { thread } => {
             if thread.parent_id == Some(SUGGESTIONS_ID) {
-                events::suggestion_made::run(&ctx, &thread).await;
+                events::suggestion_made::run(ctx, thread, data).await
+            } else {
+                Ok(())
             }
         }
 
-        _ => {}
-    }
-}
-
-#[cfg(feature = "tui")]
-fn tui_logic(log_reciever: LogReciever) {
-    enable_raw_mode().expect("failed to setup terminal");
-    let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen, EnableMouseCapture).expect("failed to setup terminal");
-    let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::new(backend).expect("failed to setup terminal");
-
-    // create app and run it
-    let tick_rate = Duration::from_millis(250);
-    let res = run_tui(&mut terminal, tick_rate, log_reciever);
-
-    // restore terminal
-    disable_raw_mode().expect("failed to restore terminal");
-    execute!(
-        terminal.backend_mut(),
-        LeaveAlternateScreen,
-        DisableMouseCapture
-    )
-    .expect("failed to restore terminal");
-    terminal.show_cursor().expect("failed to restore terminal");
-
-    if let Err(err) = res {
-        println!("{:?}", err)
+        _ => Ok(()),
     }
 }
 
@@ -81,10 +78,7 @@ async fn main() -> Result<(), Error> {
     let logger = Logger::new();
 
     // list enabled features
-    #[allow(unused_mut)]
-    let mut features: Vec<&str> = vec![];
-
-    // ? use cfg! macro
+    let features = create_feature_list();
 
     if !features.is_empty() {
         logger
@@ -103,14 +97,17 @@ async fn main() -> Result<(), Error> {
         .filter(|link| link.ends_with(".png") || link.ends_with(".jpg"))
         .collect();
 
-    let commands: Vec<Command<Data, Error>> = vec![commands::ping()];
+    let mut commands: Vec<Command<Data, Error>> = vec![commands::ping()];
+
+    #[cfg(feature = "autorole")]
+    commands.push(commands::autorole());
 
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
             commands,
             event_handler: |ctx, event, _framework, data| {
                 Box::pin(async move {
-                    emit_event(event, ctx, data).await;
+                    emit_event(event, ctx, data).await?;
                     Ok(())
                 })
             },
@@ -135,16 +132,14 @@ async fn main() -> Result<(), Error> {
 
     // spawn bot
     #[cfg(feature = "tui")]
-    tokio::spawn(async move {
-        framework.start_autosharded().await.unwrap();
-    });
+    tokio::spawn(async move { start_bot(framework).await });
 
     #[cfg(not(feature = "tui"))]
-    framework.start_autosharded().await.unwrap();
+    start_bot(framework).await;
 
     // setup terminal if tui feature is enabled
     #[cfg(feature = "tui")]
-    tui_logic(recievers.log);
+    views::prelude(recievers.log);
 
     // otherwise block the thread
     #[cfg(not(feature = "tui"))]

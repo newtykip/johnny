@@ -1,6 +1,7 @@
 use std::ops::Div;
 
 use super::Views;
+use ansi_to_tui::IntoText;
 use crossterm::event::KeyCode;
 use johnny::logger;
 use tui::{
@@ -49,7 +50,12 @@ pub fn log<B: Backend>(f: &mut Frame<B>, log: &logger::Entry, selected_index: &u
         .title(log.level.to_string())
         .border_type(BorderType::Plain);
 
-    let log_text = Paragraph::new(log.to_string()).block(block.clone());
+    let log_text = Paragraph::new(
+        log.to_string()
+            .into_text()
+            .expect("log message should be convertable to text"),
+    )
+    .block(block.clone());
 
     f.render_widget(log_text, chunks[0]);
 

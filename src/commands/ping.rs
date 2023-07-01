@@ -7,11 +7,7 @@ async fn run(ctx: Context<'_>) -> Result<(), Error> {
     ctx.defer_ephemeral().await?;
 
     // create the base embed and reply
-    let mut embed = create_embed(
-        ctx.author(),
-        ctx.author_member().await.map(|x| x.into_owned()),
-    )
-    .await;
+    let mut embed = create_embed(&ctx).await;
 
     embed.title("meow!");
 

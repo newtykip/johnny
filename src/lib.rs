@@ -1,9 +1,11 @@
 pub mod logger;
 
 use poise::{
-    serenity_prelude::{ChannelId, EmojiId, Member, User},
+    serenity_prelude::{ChannelId, EmojiId},
     CreateReply,
 };
+#[cfg(feature = "johnny")]
+use rand::seq::SliceRandom;
 use serenity::{builder::CreateEmbed, utils::Colour};
 use tokio::sync::mpsc;
 
@@ -27,8 +29,10 @@ pub const UPVOTE_ID: EmojiId = EmojiId(1120764904656351324);
 pub const DOWNVOTE_ID: EmojiId = EmojiId(1120764921555206336);
 
 /// Set the author of an embed to the author of the message
-pub async fn create_embed(user: &User, member: Option<Member>) -> CreateEmbed {
+pub async fn create_embed(ctx: &Context<'_>) -> CreateEmbed {
     let mut embed = CreateEmbed::default();
+    let user = ctx.author();
+    let member = ctx.author_member().await;
 
     let mut name = user.name.clone();
     let mut avatar_option = user.avatar_url();
@@ -53,7 +57,7 @@ pub async fn create_embed(user: &User, member: Option<Member>) -> CreateEmbed {
 pub fn johnny_image(data: &Data) -> String {
     data.johnny_images
         .choose(&mut rand::thread_rng())
-        .unwrap()
+        .expect("there should be images of johnny loaded into the bot's data")
         .clone()
 }
 
@@ -71,7 +75,7 @@ pub struct BotRecievers {
 }
 
 pub struct BotSenders {
-    pub log: mpsc::Sender<logger::Entry>,
+    pub log: logger::Sender,
 }
 
 #[cfg(feature = "tui")]

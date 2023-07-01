@@ -1,13 +1,31 @@
 use crate::Context;
 use chrono::{DateTime, Local};
 #[cfg(not(feature = "tui"))]
+use owo_colors::colors::Cyan;
 use owo_colors::{
-    colors::{Cyan, Green},
+    colors::{Green, Red},
     OwoColorize,
     Stream::Stdout,
 };
 use poise::serenity_prelude::{Guild, User};
 use tokio::sync::mpsc;
+
+/// Colour code booleans
+fn parse_booleans(message: String) -> String {
+    message
+        .replace(
+            "true",
+            &"true"
+                .if_supports_color(Stdout, |text| text.fg::<Green>())
+                .to_string(),
+        )
+        .replace(
+            "false",
+            &"false"
+                .if_supports_color(Stdout, |text| text.fg::<Red>())
+                .to_string(),
+        )
+}
 
 pub struct Logger {
     #[cfg(feature = "tui")]
@@ -26,7 +44,10 @@ impl Logger {
     }
 
     #[cfg(feature = "tui")]
-    async fn log(&self, level: Level, message: String, ctx: Option<&Context<'_>>) {
+    async fn log(&self, level: LogLevel, message: String, ctx: Option<&Context<'_>>) {
+        // colour code booleans
+        let message = parse_booleans(message);
+
         let entry = Entry {
             level,
             message,
@@ -35,11 +56,14 @@ impl Logger {
             user: ctx.map(|ctx| ctx.author().clone()),
         };
 
-        self.sender.send(entry).await.unwrap();
+        self.sender
+            .send(entry)
+            .await
+            .expect("should have been able to send log entry through channel to tui");
     }
 
     #[cfg(not(feature = "tui"))]
-    async fn log(&self, level: Level, message: String) {
+    async fn log(&self, level: LogLevel, message: String) {
         let entry = Entry {
             level,
             message,
@@ -51,18 +75,18 @@ impl Logger {
 
     #[cfg(feature = "tui")]
     pub async fn info(&self, message: String, ctx: Option<&Context<'_>>) {
-        self.log(Level::Info, message, ctx).await
+        self.log(LogLevel::Info, message, ctx).await
     }
 
     #[cfg(not(feature = "tui"))]
     pub async fn info(&self, message: String) {
-        self.log(Level::Info, message).await
+        self.log(LogLevel::Info, message).await
     }
 
     pub async fn command(&self, ctx: &Context<'_>) {
         #[cfg(feature = "tui")]
         self.log(
-            Level::Command,
+            LogLevel::Command,
             format!(
                 "{} ran {} in {}",
                 ctx.author().name,
@@ -79,7 +103,7 @@ impl Logger {
 
         #[cfg(not(feature = "tui"))]
         self.log(
-            Level::Command,
+            LogLevel::Command,
             format!(
                 "{} ran {} in {}",
                 ctx.author().name,
@@ -93,19 +117,24 @@ impl Logger {
         )
         .await;
     }
+
+    // todo: impl
+    pub async fn event() {}
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Level {
+pub enum LogLevel {
     Info,
     Command,
+    Event,
 }
 
-impl ToString for Level {
+impl ToString for LogLevel {
     fn to_string(&self) -> String {
         match self {
-            Level::Info => "INFO".to_string(),
-            Level::Command => "COMMAND".to_string(),
+            LogLevel::Info => "INFO".to_string(),
+            LogLevel::Command => "COMMAND".to_string(),
+            LogLevel::Event => "EVENT".to_string(),
         }
     }
 }
@@ -113,7 +142,7 @@ impl ToString for Level {
 #[derive(Debug, Clone)]
 pub struct Entry {
     pub timestamp: DateTime<Local>,
-    pub level: Level,
+    pub level: LogLevel,
     pub message: String,
     #[cfg(feature = "tui")]
     pub guild: Option<Guild>,
@@ -136,8 +165,8 @@ impl ToString for Entry {
         let timestamp = timestamp.if_supports_color(Stdout, |text| text.fg::<Cyan>());
         #[cfg(not(feature = "tui"))]
         let level = level.if_supports_color(Stdout, |text| match self.level {
-            Level::Info => text.bold().to_string(),
-            Level::Command => text.fg::<Green>().bold().to_string(),
+            LogLevel::Info => text.bold().to_string(),
+            LogLevel::Command => text.fg::<Green>().bold().to_string(),
         });
 
         format!("{} {} {}", timestamp, level, self.message)
