@@ -54,11 +54,14 @@ pub async fn create_embed(ctx: &Context<'_>) -> CreateEmbed {
     if let Some(member) = member {
         // if the author is a member, use their display name and avatar
         name = member.display_name().to_string();
-        avatar_option = member.avatar_url()
+        avatar_option = member.avatar_url();
     }
 
-    // if the avatar is none, use the default
-    let avatar = avatar_option.unwrap_or_else(|| user.default_avatar_url());
+    // determine the avatar
+    let avatar = avatar_option
+        .or(user.avatar_url())
+        .or(Some(user.default_avatar_url()))
+        .expect("there is definitely a default user avatar");
 
     embed
         .author(|author| author.name(name).icon_url(avatar))

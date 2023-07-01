@@ -11,5 +11,10 @@ do
 done
 
 # build step
-cargo build --release --features $features
-cp target/release/$(basename $1) $1
+if [ -z $features ]; then
+	cargo build --release
+else
+	cargo build --release --features $features
+fi
+
+cp target/release/$(basename $PWD) $(basename $PWD)
