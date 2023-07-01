@@ -84,19 +84,23 @@ impl Logger {
     }
 
     pub async fn command(&self, ctx: &Context<'_>) {
+        let author = ctx.author().name.clone();
+        let command = ctx.command().name.clone();
+
+        #[cfg(not(feature = "johnny"))]
+        let context = if let Some(guild) = ctx.guild() {
+            guild.name
+        } else {
+            "DMs".to_string()
+        };
+
         #[cfg(feature = "tui")]
         self.log(
             LogLevel::Command,
-            format!(
-                "{} ran {} in {}",
-                ctx.author().name,
-                ctx.command().name,
-                if let Some(guild) = ctx.guild() {
-                    guild.name
-                } else {
-                    "DMs".to_string()
-                }
-            ),
+            #[cfg(feature = "johnny")]
+            format!("{} ran {}", author, command),
+            #[cfg(not(feature = "johnny"))]
+            format!("{} ran {} in {}", author, command, context),
             Some(ctx),
         )
         .await;
@@ -104,16 +108,7 @@ impl Logger {
         #[cfg(not(feature = "tui"))]
         self.log(
             LogLevel::Command,
-            format!(
-                "{} ran {} in {}",
-                ctx.author().name,
-                ctx.command().name,
-                if let Some(guild) = ctx.guild() {
-                    guild.name
-                } else {
-                    "DMs".to_string()
-                }
-            ),
+            format!("{} ran {} in {}", name, command, context),
         )
         .await;
     }
