@@ -1,9 +1,15 @@
 use johnny::{Data, Error};
-use poise::serenity_prelude::{Activity, Context, Ready};
+use poise::serenity_prelude::Ready;
+#[cfg(feature = "johnny")]
+use poise::serenity_prelude::{Activity, Context};
 
-pub async fn run(ctx: &Context, _ready: &Ready, data: &Data) -> Result<(), Error> {
+pub async fn run(
+    #[cfg(feature = "johnny")] ctx: &Context,
+    ready: &Ready,
+    data: &Data,
+) -> Result<(), Error> {
     data.logger
-        .info(format!("Logged in as {}", _ready.user.name), None)
+        .info(format!("Logged in as {}", ready.user.name), None)
         .await;
 
     #[cfg(feature = "johnny")]

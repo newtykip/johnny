@@ -1,3 +1,3 @@
-pub mod ready;
 #[cfg(feature = "johnny")]
-pub mod suggestion_made;
+pub mod johnny;
+pub mod ready;

@@ -52,7 +52,7 @@ impl Logger {
             level,
             message,
             timestamp: Local::now(),
-            guild: ctx.map(|ctx| ctx.guild()).flatten(),
+            guild: ctx.and_then(|ctx| ctx.guild()),
             user: ctx.map(|ctx| ctx.author().clone()),
         };
 

@@ -17,4 +17,4 @@ Cargo.lock
 .env
 
 emit.rs
-johnny
+./johnny

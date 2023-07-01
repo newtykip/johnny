@@ -10,7 +10,7 @@ use imgurs::ImgurClient;
 use johnny::Bot;
 use johnny::{logger::Logger, Context, Data, Error};
 #[cfg(feature = "johnny")]
-use johnny::{JOHNNY_GALLERY_ID, SUGGESTIONS_ID};
+use johnny::{JOHNNY_GALLERY_ID, SUGGESTIONS_ID, USERNAMES_ID};
 use poise::{serenity_prelude as serenity, Command, Event, Framework};
 use std::sync::Arc;
 
@@ -45,18 +45,35 @@ async fn start_bot(framework: Arc<Framework<Data, Error>>) {
 
 pub async fn emit_event(
     event: &Event<'_>,
-    ctx: &serenity::Context,
+    #[allow(unused_variables)] ctx: &serenity::Context,
     data: &Data,
 ) -> Result<(), Error> {
     match event {
         // ready
-        Event::Ready { data_about_bot } => events::ready::run(ctx, data_about_bot, data).await,
+        Event::Ready { data_about_bot } => {
+            #[cfg(feature = "johnny")]
+            return events::ready::run(ctx, data_about_bot, data).await;
+            #[cfg(not(feature = "johnny"))]
+            return events::ready::run(data_about_bot, data).await;
+        }
 
         // thread create
         #[cfg(feature = "johnny")]
         Event::ThreadCreate { thread } => {
+            // suggestion created
             if thread.parent_id == Some(SUGGESTIONS_ID) {
-                events::suggestion_made::run(ctx, thread, data).await
+                events::johnny::suggestion::run(ctx, thread).await
+            } else {
+                Ok(())
+            }
+        }
+
+        // message send
+        #[cfg(feature = "johnny")]
+        Event::Message { new_message } => {
+            // username posted
+            if new_message.channel_id == USERNAMES_ID {
+                events::johnny::single_username::run(ctx, new_message).await
             } else {
                 Ok(())
             }

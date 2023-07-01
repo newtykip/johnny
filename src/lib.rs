@@ -2,10 +2,9 @@ pub mod logger;
 
 #[cfg(feature = "johnny")]
 use once_cell::sync::Lazy;
-use poise::{
-    serenity_prelude::{ChannelId, EmojiId, ReactionType},
-    CreateReply,
-};
+#[cfg(feature = "johnny")]
+use poise::serenity_prelude::{ChannelId, EmojiId, ReactionType};
+use poise::CreateReply;
 #[cfg(feature = "johnny")]
 use rand::seq::SliceRandom;
 use serenity::{builder::CreateEmbed, utils::Colour};
@@ -27,6 +26,8 @@ pub const JOHNNY_GALLERY_ID: &str = "qsKCczF";
 // channel ids
 #[cfg(feature = "johnny")]
 pub const SUGGESTIONS_ID: ChannelId = ChannelId(1120764782014890032);
+#[cfg(feature = "johnny")]
+pub const USERNAMES_ID: ChannelId = ChannelId(1124773473110208652);
 
 // emoji ids
 #[cfg(feature = "johnny")]
@@ -111,7 +112,7 @@ impl Bot {
 
         (
             Self {
-                senders: BotSenders { log: log_tx }.into(),
+                senders: BotSenders { log: log_tx },
             },
             BotRecievers { log: log_rx },
         )

@@ -76,7 +76,7 @@ pub fn run_tui<B: Backend>(
     loop {
         // draw ui
         terminal.draw(|f| match current_view {
-            Views::Main => main(f, &mut logs.clone(), &mut vertical_index),
+            Views::Main => main(f, &mut logs.clone(), &vertical_index),
             Views::Log => log(f, &logs[vertical_index], &horizontal_index),
             _ => unimplemented!(),
         })?;

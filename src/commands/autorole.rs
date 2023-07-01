@@ -6,15 +6,17 @@ use serenity::{
 };
 use std::time::Duration;
 
+#[allow(dead_code)]
 fn button_id(guild: &Guild) -> String {
     format!("autorole-{}", guild.id)
 }
 
+#[allow(dead_code)]
 fn toggle_button(guild: &Guild, enabled: &bool) -> CreateButton {
     let mut toggle_button = CreateButton::default();
 
     toggle_button
-        .custom_id(button_id(&guild))
+        .custom_id(button_id(guild))
         .emoji(ReactionType::Unicode(
             if !enabled { "✅" } else { "❌" }.to_string(),
         ))
@@ -63,7 +65,7 @@ pub async fn autorole(ctx: Context<'_>) -> Result<(), Error> {
 
     // wait for a response
     let mut interaction_stream = reply
-        .await_component_interactions(&ctx)
+        .await_component_interactions(ctx)
         .timeout(Duration::from_secs(60 * 3))
         .build();
 
