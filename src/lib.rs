@@ -1,7 +1,9 @@
 pub mod logger;
 
+#[cfg(feature = "johnny")]
+use once_cell::sync::Lazy;
 use poise::{
-    serenity_prelude::{ChannelId, EmojiId},
+    serenity_prelude::{ChannelId, EmojiId, ReactionType},
     CreateReply,
 };
 #[cfg(feature = "johnny")]
@@ -19,14 +21,26 @@ pub type Context<'a> = poise::Context<'a, Data, Error>;
 
 /// The id of the johnny gallery on imgur
 // todo: make this the correct id when i get the images
+#[cfg(feature = "johnny")]
 pub const JOHNNY_GALLERY_ID: &str = "qsKCczF";
 
 // channel ids
+#[cfg(feature = "johnny")]
 pub const SUGGESTIONS_ID: ChannelId = ChannelId(1120764782014890032);
 
 // emoji ids
-pub const UPVOTE_ID: EmojiId = EmojiId(1120764904656351324);
-pub const DOWNVOTE_ID: EmojiId = EmojiId(1120764921555206336);
+#[cfg(feature = "johnny")]
+pub const UPVOTE_REACTION: Lazy<ReactionType> = Lazy::new(|| ReactionType::Custom {
+    animated: false,
+    id: EmojiId(1120764904656351324),
+    name: Some("upvote".into()),
+});
+#[cfg(feature = "johnny")]
+pub const DOWNVOTE_REACTION: Lazy<ReactionType> = Lazy::new(|| ReactionType::Custom {
+    animated: false,
+    id: EmojiId(1120764921555206336),
+    name: Some("downvote".into()),
+});
 
 /// Set the author of an embed to the author of the message
 pub async fn create_embed(ctx: &Context<'_>) -> CreateEmbed {

@@ -97,6 +97,8 @@ async fn main() -> Result<(), Error> {
         .filter(|link| link.ends_with(".png") || link.ends_with(".jpg"))
         .collect();
 
+    #[allow(unused_mut)]
+    // default commands are already in the vec
     let mut commands: Vec<Command<Data, Error>> = vec![commands::ping()];
 
     #[cfg(feature = "autorole")]
