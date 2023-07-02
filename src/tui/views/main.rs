@@ -26,8 +26,8 @@ pub fn controls(
             *log_index = 0;
             logs.clear();
         }
-        // toggle following
-        KeyCode::Char('f') => {
+        // toggle following and select mode
+        KeyCode::Char('m') => {
             *following = !*following;
 
             if *following {
@@ -35,10 +35,14 @@ pub fn controls(
             }
         }
         // select the log above
-        KeyCode::Up => *log_index = log_index.saturating_sub(1),
+        KeyCode::Up => {
+            if !*following {
+                *log_index = log_index.saturating_sub(1)
+            }
+        }
         // select the log below
         KeyCode::Down => {
-            if *log_index < logs.len().saturating_sub(1) {
+            if *log_index < logs.len().saturating_sub(1) && !*following {
                 *log_index += 1;
             }
         }
@@ -92,8 +96,13 @@ pub fn draw<B: Backend>(f: &mut Frame<B>, logs: &[logger::Entry], following: &bo
 
     // controls on the bottom
     let controls = Paragraph::new(format!(
-        r#"Press c to clear logs, f to {} following, q to quit"#,
-        if *following { "stop" } else { "start" }
+        r#"Press c to clear logs, m to switch to {} mode,{} enter to view, q to quit"#,
+        if *following { "select" } else { "following" },
+        if *following {
+            ""
+        } else {
+            " up/down to select,"
+        }
     ))
     .style(CONTROLS_STYLE.clone());
 
