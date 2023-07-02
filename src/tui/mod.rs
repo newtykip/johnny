@@ -25,9 +25,26 @@ use views::{log, main};
 // todo: add guild, user, member views
 
 #[allow(dead_code)]
+#[derive(PartialEq)]
 pub enum Views {
     Main,
     Log,
+}
+
+pub struct App {
+    logs: Vec<logger::Entry>,
+    log_index: usize,
+    view: Views,
+}
+
+impl Default for App {
+    fn default() -> Self {
+        Self {
+            logs: vec![],
+            log_index: 0,
+            view: Views::Main,
+        }
+    }
 }
 
 pub fn prelude(log_reciever: Reciever) -> io::Result<()> {
@@ -59,31 +76,27 @@ pub fn run_tui<B: Backend>(
     mut log_reciever: logger::Reciever,
 ) -> io::Result<()> {
     let mut last_tick = Instant::now();
-    let mut logs: Vec<logger::Entry> = vec![];
-    let mut current_view = Views::Main;
 
-    // general usage
-    let mut index = 0;
-
-    // main view
-    let mut log_index = 0;
-    let mut following = true;
+    // states
+    let mut app = App::default();
+    let mut main_state = main::MainState::default();
+    let mut log_state = log::LogState::default();
 
     loop {
         // draw ui
-        terminal.draw(|f| match current_view {
-            Views::Main => main::draw(f, &logs, &following, &log_index),
-            Views::Log => log::draw(f, &logs[log_index], &index),
+        terminal.draw(|f| match app.view {
+            Views::Main => main::draw(f, &app, &main_state),
+            Views::Log => log::draw(f, &app, &log_state),
             #[allow(unreachable_patterns)]
             _ => unimplemented!(),
         })?;
 
         // receive logs
         if let Ok(log) = log_reciever.try_recv() {
-            logs.push(log);
+            app.logs.push(log);
 
-            if following {
-                log_index = logs.len().saturating_sub(1);
+            if app.view == Views::Main && main_state.following {
+                app.log_index = app.logs.len().saturating_sub(1);
             }
         }
 
@@ -101,22 +114,13 @@ pub fn run_tui<B: Backend>(
                 }
 
                 // view specific keybinds
-                match current_view {
-                    Views::Main => main::controls(
-                        &key.code,
-                        &mut logs,
-                        &mut log_index,
-                        &mut index,
-                        &mut following,
-                        &mut current_view,
-                    ),
-                    Views::Log => log::controls(
-                        &key.code,
-                        &mut index,
-                        &logs[log_index],
-                        &mut following,
-                        &mut current_view,
-                    ),
+                match app.view {
+                    Views::Main => {
+                        main::controls(&key.code, &mut app, &mut main_state, &mut log_state)
+                    }
+                    Views::Log => {
+                        log::controls(&key.code, &mut app, &mut main_state, &mut log_state)
+                    }
                     #[allow(unreachable_patterns)]
                     _ => {}
                 }

@@ -1,9 +1,9 @@
+use super::main::MainState;
 use crate::tui::{
     helpers::{generate_button, CONTROLS_STYLE},
-    Views,
+    App, Views,
 };
 use crossterm::event::KeyCode;
-use johnny::logger;
 use ratatui::{
     backend::Backend,
     layout::{Constraint, Direction, Layout},
@@ -11,28 +11,42 @@ use ratatui::{
     Frame,
 };
 
+pub struct LogState {
+    pub index: u8,
+}
+
+impl Default for LogState {
+    fn default() -> Self {
+        Self { index: 0 }
+    }
+}
+
 pub fn controls(
     key_code: &KeyCode,
-    index: &mut u8,
-    entry: &logger::Entry,
-    following: &mut bool,
-    current_view: &mut Views,
+    app: &mut App,
+    main_state: &mut MainState,
+    log_state: &mut LogState,
 ) {
     match key_code {
         // go back to main view
         KeyCode::Backspace => {
-            *current_view = Views::Main;
-            *following = true;
+            app.view = Views::Main;
+
+            if let Some(original_following) = main_state.original_following {
+                main_state.following = original_following;
+                main_state.original_following = None;
+            }
         }
         // select button to the left
         KeyCode::Left => {
-            if *index > 0 {
-                *index -= 1;
+            if log_state.index > 0 {
+                log_state.index = log_state.index.saturating_sub(1);
             }
         }
         // select button to the right
         KeyCode::Right => {
-            let mut button_count = 0;
+            let mut button_count: u8 = 0;
+            let entry = &app.logs[app.log_index];
 
             // guild button
             if entry.guild.is_some() {
@@ -49,16 +63,17 @@ pub fn controls(
                 button_count += 1;
             }
 
-            if *index < button_count - 1 {
-                *index += 1;
+            if log_state.index < button_count.saturating_sub(1) {
+                log_state.index += 1;
             }
         }
         _ => {}
     }
 }
 
-pub fn draw<B: Backend>(f: &mut Frame<B>, entry: &logger::Entry, index: &u8) {
+pub fn draw<B: Backend>(f: &mut Frame<B>, app: &App, state: &LogState) {
     // is any button going to be rendered?
+    let entry = &app.logs[app.log_index];
     let guild_exists = entry.guild.is_some();
     let user_exists = entry.user.is_some();
     let button_exists = guild_exists || user_exists;
@@ -106,21 +121,21 @@ pub fn draw<B: Backend>(f: &mut Frame<B>, entry: &logger::Entry, index: &u8) {
 
         if guild_exists {
             let current_index = button_index.clone();
-            let guild_button = generate_button("Guild", *index == current_index);
+            let guild_button = generate_button("Guild", state.index == current_index);
             f.render_widget(guild_button, button_chunks[button_index as usize]);
             button_index += 1;
         }
 
         if guild_exists && user_exists {
             let current_index = button_index.clone();
-            let member_button = generate_button("Member", *index == current_index);
+            let member_button = generate_button("Member", state.index == current_index);
             f.render_widget(member_button, button_chunks[button_index as usize]);
             button_index += 1;
         }
 
         if user_exists {
             let current_index = button_index.clone();
-            let user_button = generate_button("User", *index == current_index);
+            let user_button = generate_button("User", state.index == current_index);
             f.render_widget(user_button, button_chunks[button_index as usize]);
         }
     }
