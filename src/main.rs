@@ -1,7 +1,7 @@
 mod commands;
 mod events;
 #[cfg(feature = "tui")]
-mod views;
+mod tui;
 
 use dotenvy_macro::dotenv;
 #[cfg(feature = "johnny")]
@@ -158,12 +158,11 @@ async fn main() -> Result<(), Error> {
 
     // setup terminal if tui feature is enabled
     #[cfg(feature = "tui")]
-    views::prelude(recievers.log);
+    tui::prelude(recievers.log)?;
 
     // otherwise block the thread
     #[cfg(not(feature = "tui"))]
     loop {}
 
-    #[allow(unreachable_code)]
     Ok(())
 }
