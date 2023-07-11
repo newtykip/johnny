@@ -14,7 +14,7 @@ done
 if [ -z $features ]; then
 	cargo build --release
 else
-	cargo build --release --features $features
+	cargo build --release --no-default-features --features $features
 fi
 
 cp target/release/$(basename $PWD) $(basename $PWD)

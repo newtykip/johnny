@@ -3,37 +3,37 @@ mod events;
 #[cfg(feature = "tui")]
 mod tui;
 
-use dotenvy_macro::dotenv;
+use dotenvy_macro::dotenv as env;
 #[cfg(feature = "johnny")]
 use imgurs::ImgurClient;
 #[cfg(feature = "tui")]
 use johnny::Bot;
 use johnny::{logger::Logger, Context, Data, Error};
 #[cfg(feature = "johnny")]
-use johnny::{JOHNNY_GALLERY_IDS, SUGGESTIONS_ID, USERNAMES_ID};
+use johnny::{JOHNNY_GALLERY_IDS, SUGGESTIONS_ID};
 use poise::{serenity_prelude as serenity, Command, Event, Framework};
+#[cfg(db)]
+use sea_orm::Database;
 use std::sync::Arc;
 
-fn create_feature_list<'t>() -> Vec<&'t str> {
-    let mut features = vec![];
+// ensure that only one of the database dirvers have been enabled
+// note: this will always error in vscode as all features are enabled for intellisense, but it will compile fine
+#[cfg(multiple_db)]
+compile_error!("please choose only one of \"mysql\", \"sqlite\" or \"postgres\"");
 
-    if cfg!(feature = "tui") {
-        features.push("tui");
+// ensure that a db driver has been selected alongside any features that require a db
+#[cfg(all(feature = "autorole", not(db)))]
+compile_error!("please choose one of \"mysql\", \"sqlite\" or \"postgres\", you need one of them enabled for autorole to work");
+
+macro_rules! make_feat_list {
+    ($($feat:expr),*) => {
+        vec![
+            $(
+                #[cfg(feature = $feat)]
+                $feat,
+            )*
+        ]
     }
-
-    if cfg!(feature = "johnny") {
-        features.push("johnny");
-    }
-
-    if cfg!(feature = "verbose") {
-        features.push("verbose");
-    }
-
-    if cfg!(feature = "autorole") {
-        features.push("autorole");
-    }
-
-    features
 }
 
 async fn start_bot(framework: Arc<Framework<Data, Error>>) {
@@ -68,23 +68,17 @@ pub async fn emit_event(
             }
         }
 
-        // message send
-        #[cfg(feature = "johnny")]
-        Event::Message { new_message } => {
-            // username posted
-            if new_message.channel_id == USERNAMES_ID {
-                events::johnny::single_username::run(ctx, new_message).await
-            } else {
-                Ok(())
-            }
-        }
-
         _ => Ok(()),
     }
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
+    // connect to the database
+    // todo: pretty error if this does not work
+    #[cfg(db)]
+    let _db = Database::connect(env!("DB_URL")).await?;
+
     #[cfg(feature = "tui")]
     let (bot, recievers) = Bot::new();
 
@@ -95,7 +89,8 @@ async fn main() -> Result<(), Error> {
     let logger = Logger::new();
 
     // list enabled features
-    let features = create_feature_list();
+    let features =
+        make_feat_list!["tui", "johnny", "verbose", "sqlite", "postgres", "mysql", "autorole"];
 
     if !features.is_empty() {
         logger
@@ -105,7 +100,7 @@ async fn main() -> Result<(), Error> {
 
     #[cfg(feature = "johnny")]
     let johnny_images = {
-        let client = ImgurClient::new(&dotenv!("IMGUR_CLIENT_ID"));
+        let client = ImgurClient::new(&env!("IMGUR_CLIENT_ID"));
         let mut images = vec![];
 
         for id in JOHNNY_GALLERY_IDS {
@@ -144,7 +139,7 @@ async fn main() -> Result<(), Error> {
             post_command: |ctx| Box::pin(async move { ctx.data().logger.command(&ctx).await }),
             ..Default::default()
         })
-        .token(dotenv!("DISCORD_TOKEN"))
+        .token(env!("DISCORD_TOKEN"))
         .intents(serenity::GatewayIntents::non_privileged())
         .initialize_owners(true)
         .setup(|ctx, _ready, framework| {
@@ -175,5 +170,6 @@ async fn main() -> Result<(), Error> {
     #[cfg(not(feature = "tui"))]
     loop {}
 
+    #[allow(unreachable_code)]
     Ok(())
 }

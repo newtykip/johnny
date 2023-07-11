@@ -6,6 +6,7 @@ use poise::CreateReply;
 #[cfg(feature = "johnny")]
 use rand::seq::SliceRandom;
 use serenity::{builder::CreateEmbed, utils::Colour};
+#[cfg(feature = "tui")]
 use tokio::sync::mpsc;
 
 pub struct Data {
@@ -19,8 +20,6 @@ pub type Context<'a> = poise::Context<'a, Data, Error>;
 // channel ids
 #[cfg(feature = "johnny")]
 pub const SUGGESTIONS_ID: ChannelId = ChannelId(1120764782014890032);
-#[cfg(feature = "johnny")]
-pub const USERNAMES_ID: ChannelId = ChannelId(1124773473110208652);
 
 // reactions
 #[cfg(feature = "johnny")]

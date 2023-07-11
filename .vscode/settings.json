@@ -7,5 +7,6 @@
 		"target": true,
 		"Cargo.lock": true
 	},
-	"rust-analyzer.cargo.features": "all"
+	"rust-analyzer.cargo.features": "all",
+	"rust-analyzer.cargo.buildScripts.enable": true
 }
