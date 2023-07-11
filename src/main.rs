@@ -10,7 +10,7 @@ use imgurs::ImgurClient;
 use johnny::Bot;
 use johnny::{logger::Logger, Context, Data, Error};
 #[cfg(feature = "johnny")]
-use johnny::{JOHNNY_GALLERY_ID, SUGGESTIONS_ID, USERNAMES_ID};
+use johnny::{JOHNNY_GALLERY_IDS, SUGGESTIONS_ID, USERNAMES_ID};
 use poise::{serenity_prelude as serenity, Command, Event, Framework};
 use std::sync::Arc;
 
@@ -104,15 +104,25 @@ async fn main() -> Result<(), Error> {
     }
 
     #[cfg(feature = "johnny")]
-    let johnny_images = ImgurClient::new(&dotenv!("IMGUR_CLIENT_ID"))
-        .album_info(JOHNNY_GALLERY_ID)
-        .await?
-        .data
-        .images
-        .iter()
-        .map(|image| image.link.clone())
-        .filter(|link| link.ends_with(".png") || link.ends_with(".jpg"))
-        .collect();
+    let johnny_images = {
+        let client = ImgurClient::new(&dotenv!("IMGUR_CLIENT_ID"));
+        let mut images = vec![];
+
+        for id in JOHNNY_GALLERY_IDS {
+            images.extend(
+                client
+                    .album_info(id)
+                    .await?
+                    .data
+                    .images
+                    .iter()
+                    .map(|image| image.link.clone())
+                    .filter(|link| link.ends_with(".png") || link.ends_with(".jpg")),
+            )
+        }
+
+        images
+    };
 
     #[allow(unused_mut)]
     // default commands are already in the vec
@@ -130,6 +140,7 @@ async fn main() -> Result<(), Error> {
                     Ok(())
                 })
             },
+            #[cfg(feature = "verbose")]
             post_command: |ctx| Box::pin(async move { ctx.data().logger.command(&ctx).await }),
             ..Default::default()
         })

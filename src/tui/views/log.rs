@@ -1,6 +1,6 @@
-use super::main::MainState;
+use super::main::State as MainState;
 use crate::tui::{
-    helpers::{generate_button, CONTROLS_STYLE},
+    helpers::{generate_button, generate_controls},
     App, Views,
 };
 use crossterm::event::KeyCode;
@@ -11,22 +11,12 @@ use ratatui::{
     Frame,
 };
 
-pub struct LogState {
+#[derive(Default)]
+pub struct State {
     pub index: u8,
 }
 
-impl Default for LogState {
-    fn default() -> Self {
-        Self { index: 0 }
-    }
-}
-
-pub fn controls(
-    key_code: &KeyCode,
-    app: &mut App,
-    main_state: &mut MainState,
-    log_state: &mut LogState,
-) {
+pub fn controls(key_code: &KeyCode, app: &mut App, main_state: &mut MainState, state: &mut State) {
     match key_code {
         // go back to main view
         KeyCode::Backspace => {
@@ -39,8 +29,8 @@ pub fn controls(
         }
         // select button to the left
         KeyCode::Left => {
-            if log_state.index > 0 {
-                log_state.index = log_state.index.saturating_sub(1);
+            if state.index > 0 {
+                state.index = state.index.saturating_sub(1);
             }
         }
         // select button to the right
@@ -63,15 +53,15 @@ pub fn controls(
                 button_count += 1;
             }
 
-            if log_state.index < button_count.saturating_sub(1) {
-                log_state.index += 1;
+            if state.index < button_count.saturating_sub(1) {
+                state.index += 1;
             }
         }
         _ => {}
     }
 }
 
-pub fn draw<B: Backend>(f: &mut Frame<B>, app: &App, state: &LogState) {
+pub fn draw<B: Backend>(f: &mut Frame<B>, app: &App, state: &State) {
     // is any button going to be rendered?
     let entry = &app.logs[app.log_index];
     let guild_exists = entry.guild.is_some();
@@ -120,29 +110,28 @@ pub fn draw<B: Backend>(f: &mut Frame<B>, app: &App, state: &LogState) {
         let mut button_index = 0;
 
         if guild_exists {
-            let current_index = button_index.clone();
+            let current_index = button_index;
             let guild_button = generate_button("Guild", state.index == current_index);
             f.render_widget(guild_button, button_chunks[button_index as usize]);
             button_index += 1;
         }
 
         if guild_exists && user_exists {
-            let current_index = button_index.clone();
+            let current_index = button_index;
             let member_button = generate_button("Member", state.index == current_index);
             f.render_widget(member_button, button_chunks[button_index as usize]);
             button_index += 1;
         }
 
         if user_exists {
-            let current_index = button_index.clone();
+            let current_index = button_index;
             let user_button = generate_button("User", state.index == current_index);
             f.render_widget(user_button, button_chunks[button_index as usize]);
         }
     }
 
     // controls on the bottom
-    let controls = Paragraph::new("Press backspace to return to the main view, q to quit")
-        .style(CONTROLS_STYLE.clone());
+    let controls = generate_controls("Press backspace to return to the main view");
 
     f.render_widget(controls, chunks[if button_exists { 2 } else { 1 }]);
 }

@@ -1,10 +1,8 @@
-#![allow(clippy::single_match)]
-
 mod helpers;
 mod views;
 
 use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
+    event::{self, Event, KeyCode},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -19,10 +17,13 @@ use std::{
 };
 use views::{log, main};
 
+const TICK_RATE: Duration = Duration::from_millis(250);
+
 // todo: first time setup
 // todo: configuration
 // todo: make button highlights only appear over text
 // todo: add guild, user, member views
+// todo: emitter
 
 #[allow(dead_code)]
 #[derive(PartialEq)]
@@ -50,21 +51,16 @@ impl Default for App {
 pub fn prelude(log_reciever: Reciever) -> io::Result<()> {
     enable_raw_mode()?;
     let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
+    execute!(stdout, EnterAlternateScreen)?;
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
     // create app and run it
-    let tick_rate = Duration::from_millis(250);
-    let res = run_tui(&mut terminal, tick_rate, log_reciever);
+    let res = run_tui(&mut terminal, log_reciever);
 
     // restore terminal
     disable_raw_mode()?;
-    execute!(
-        terminal.backend_mut(),
-        LeaveAlternateScreen,
-        DisableMouseCapture
-    )?;
+    execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
     terminal.show_cursor()?;
 
     res
@@ -72,15 +68,14 @@ pub fn prelude(log_reciever: Reciever) -> io::Result<()> {
 
 pub fn run_tui<B: Backend>(
     terminal: &mut Terminal<B>,
-    tick_rate: Duration,
     mut log_reciever: logger::Reciever,
 ) -> io::Result<()> {
     let mut last_tick = Instant::now();
 
     // states
     let mut app = App::default();
-    let mut main_state = main::MainState::default();
-    let mut log_state = log::LogState::default();
+    let mut main_state = main::State::default();
+    let mut log_state = log::State::default();
 
     loop {
         // draw ui
@@ -101,7 +96,7 @@ pub fn run_tui<B: Backend>(
         }
 
         // delta time
-        let timeout = tick_rate
+        let timeout = TICK_RATE
             .checked_sub(last_tick.elapsed())
             .unwrap_or_else(|| Duration::from_secs(0));
 
@@ -127,7 +122,7 @@ pub fn run_tui<B: Backend>(
             }
         }
 
-        if last_tick.elapsed() >= tick_rate {
+        if last_tick.elapsed() >= TICK_RATE {
             last_tick = Instant::now();
         }
     }

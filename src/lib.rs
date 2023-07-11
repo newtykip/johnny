@@ -1,8 +1,6 @@
 pub mod logger;
 
 #[cfg(feature = "johnny")]
-use once_cell::sync::Lazy;
-#[cfg(feature = "johnny")]
 use poise::serenity_prelude::{ChannelId, EmojiId, ReactionType};
 use poise::CreateReply;
 #[cfg(feature = "johnny")]
@@ -18,30 +16,36 @@ pub struct Data {
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 pub type Context<'a> = poise::Context<'a, Data, Error>;
 
-/// The id of the johnny gallery on imgur
-// todo: make this the correct id when i get the images
-#[cfg(feature = "johnny")]
-pub const JOHNNY_GALLERY_ID: &str = "qsKCczF";
-
 // channel ids
 #[cfg(feature = "johnny")]
 pub const SUGGESTIONS_ID: ChannelId = ChannelId(1120764782014890032);
 #[cfg(feature = "johnny")]
 pub const USERNAMES_ID: ChannelId = ChannelId(1124773473110208652);
 
-// emoji ids
+// reactions
 #[cfg(feature = "johnny")]
-pub const UPVOTE_REACTION: Lazy<ReactionType> = Lazy::new(|| ReactionType::Custom {
-    animated: false,
-    id: EmojiId(1120764904656351324),
-    name: Some("upvote".into()),
-});
+pub struct Reactions {
+    pub upvote: ReactionType,
+    pub downvote: ReactionType,
+}
+
 #[cfg(feature = "johnny")]
-pub const DOWNVOTE_REACTION: Lazy<ReactionType> = Lazy::new(|| ReactionType::Custom {
-    animated: false,
-    id: EmojiId(1120764921555206336),
-    name: Some("downvote".into()),
-});
+impl Default for Reactions {
+    fn default() -> Self {
+        Self {
+            upvote: ReactionType::Custom {
+                animated: false,
+                id: EmojiId(1120764904656351324),
+                name: Some("upvote".into()),
+            },
+            downvote: ReactionType::Custom {
+                animated: false,
+                id: EmojiId(1120764921555206336),
+                name: Some("downvote".into()),
+            },
+        }
+    }
+}
 
 /// Set the author of an embed to the author of the message
 pub async fn create_embed(ctx: &Context<'_>) -> CreateEmbed {
@@ -69,6 +73,9 @@ pub async fn create_embed(ctx: &Context<'_>) -> CreateEmbed {
         .colour(Colour::from_rgb(192, 238, 255))
         .clone()
 }
+
+#[cfg(feature = "johnny")]
+pub const JOHNNY_GALLERY_IDS: [&str; 2] = ["oPluI3u", "Ca2YQ2O"];
 
 /// Get a random johnny image
 #[cfg(feature = "johnny")]

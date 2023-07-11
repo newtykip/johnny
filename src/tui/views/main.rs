@@ -1,24 +1,25 @@
-use super::log::LogState;
-use crate::tui::{helpers::CONTROLS_STYLE, App, Views};
+use super::log::State as LogState;
+use crate::tui::{helpers::generate_controls, App, Views};
 use ansi_to_tui::IntoText;
 use crossterm::event::KeyCode;
 use ratatui::{
     backend::Backend,
     layout::{Constraint, Direction, Layout},
     style::{Color, Style},
-    widgets::{Block, Borders, List, ListItem, ListState, Paragraph},
+    widgets::{Block, Borders, List, ListItem, ListState},
     Frame,
 };
 
 // todo: dump logs to a file
+// todo: search logs
 
-pub struct MainState {
+pub struct State {
     pub following: bool,
     // stores the original following state while in a log view
     pub original_following: Option<bool>,
 }
 
-impl Default for MainState {
+impl Default for State {
     fn default() -> Self {
         Self {
             following: true,
@@ -27,12 +28,7 @@ impl Default for MainState {
     }
 }
 
-pub fn controls(
-    key_code: &KeyCode,
-    app: &mut App,
-    main_state: &mut MainState,
-    log_state: &mut LogState,
-) {
+pub fn controls(key_code: &KeyCode, app: &mut App, state: &mut State, log_state: &mut LogState) {
     match key_code {
         // clear logs
         KeyCode::Char('c') => {
@@ -41,29 +37,29 @@ pub fn controls(
         }
         // toggle following and select mode
         KeyCode::Char('m') => {
-            main_state.following = !main_state.following;
+            state.following = !state.following;
 
-            if main_state.following {
+            if state.following {
                 app.log_index = app.logs.len().saturating_sub(1);
             }
         }
         // select the log above
         KeyCode::Up => {
-            if !main_state.following {
+            if !state.following {
                 app.log_index = app.log_index.saturating_sub(1)
             }
         }
         // select the log below
         KeyCode::Down => {
-            if app.log_index < app.logs.len().saturating_sub(1) && !main_state.following {
+            if app.log_index < app.logs.len().saturating_sub(1) && !state.following {
                 app.log_index += 1;
             }
         }
         // select log
         KeyCode::Enter => {
             app.view = Views::Log;
-            main_state.original_following = Some(main_state.following);
-            main_state.following = false;
+            state.original_following = Some(state.following);
+            state.following = false;
             log_state.index = 0;
         }
         _ => {}
@@ -73,7 +69,7 @@ pub fn controls(
 // todo: allow logs to be dumped to a file
 // todo: allow for invite generation
 
-pub fn draw<B: Backend>(f: &mut Frame<B>, app: &App, state: &MainState) {
+pub fn draw<B: Backend>(f: &mut Frame<B>, app: &App, state: &State) {
     // split the screen into two vertical portions
     let chunks = Layout::default()
         .direction(Direction::Vertical)
@@ -110,8 +106,8 @@ pub fn draw<B: Backend>(f: &mut Frame<B>, app: &App, state: &MainState) {
     f.render_stateful_widget(list, chunks[0], &mut list_state);
 
     // controls on the bottom
-    let controls = Paragraph::new(format!(
-        r#"Press c to clear logs, m to switch to {} mode,{} enter to view, q to quit"#,
+    let controls = format!(
+        "Press c to clear logs, m to switch to {} mode,{} enter to select",
         if state.following {
             "select"
         } else {
@@ -120,10 +116,11 @@ pub fn draw<B: Backend>(f: &mut Frame<B>, app: &App, state: &MainState) {
         if state.following {
             ""
         } else {
-            " up/down to select,"
+            " up/down to navigate,"
         }
-    ))
-    .style(CONTROLS_STYLE.clone());
+    );
+
+    let controls = generate_controls(&controls);
 
     f.render_widget(controls, chunks[1]);
 }
