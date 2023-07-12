@@ -1,18 +1,32 @@
+#[cfg(db)]
+pub mod db;
 pub mod logger;
 
 #[cfg(feature = "johnny")]
 use poise::serenity_prelude::{ChannelId, EmojiId, ReactionType};
+#[cfg(db)]
+use poise::serenity_prelude::{GuildId, UserId};
 use poise::CreateReply;
 #[cfg(feature = "johnny")]
 use rand::seq::SliceRandom;
+#[cfg(db)]
+use sea_orm::DatabaseConnection;
 use serenity::{builder::CreateEmbed, utils::Colour};
+#[cfg(db)]
+use std::{collections::HashSet, sync::RwLock};
 #[cfg(feature = "tui")]
 use tokio::sync::mpsc;
 
 pub struct Data {
     #[cfg(feature = "johnny")]
     pub johnny_images: Vec<String>,
+    #[cfg(db)]
+    pub db: DatabaseConnection,
     pub logger: logger::Logger,
+    #[cfg(db)]
+    pub guilds_in_db: RwLock<HashSet<GuildId>>,
+    #[cfg(db)]
+    pub users_in_db: RwLock<HashSet<UserId>>,
 }
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 pub type Context<'a> = poise::Context<'a, Data, Error>;

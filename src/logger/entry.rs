@@ -1,5 +1,11 @@
 use super::LogLevel;
 use chrono::{DateTime, Local};
+#[cfg(not(feature = "tui"))]
+use owo_colors::{
+    colors::{BrightWhite, Cyan, Green, Yellow},
+    OwoColorize,
+    Stream::Stdout,
+};
 #[cfg(feature = "tui")]
 use poise::serenity_prelude::{Guild, User};
 
@@ -31,8 +37,7 @@ impl ToString for Entry {
         let level = level.if_supports_color(Stdout, |text| match self.level {
             LogLevel::Info => text.fg::<BrightWhite>().bold().to_string(),
             LogLevel::Command => text.fg::<Green>().bold().to_string(),
-            LogLevel::Event => text.fg::<Yellow>().bold().to_string(),
-            LogLevel::Database => text.to_string(),
+            LogLevel::Warn => text.fg::<Yellow>().bold().to_string(),
         });
 
         format!("{} {} {}", timestamp, level, self.message)

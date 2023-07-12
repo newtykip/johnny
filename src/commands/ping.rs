@@ -4,12 +4,17 @@ use johnny::johnny_image;
 use johnny::{apply_embed, create_embed};
 
 async fn run(ctx: Context<'_>) -> Result<(), Error> {
+    #[cfg(not(feature = "johnny"))]
     ctx.defer_ephemeral().await?;
 
     // create the base embed and reply
     let mut embed = create_embed(&ctx).await;
 
+    #[cfg(feature = "johnny")]
     embed.title("meow!");
+
+    #[cfg(not(feature = "johnny"))]
+    embed.title("ping!");
 
     // if the johnny feature is enabled, add a random johnny image
     #[cfg(feature = "johnny")]

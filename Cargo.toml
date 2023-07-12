@@ -3,24 +3,30 @@ name = "johnny"
 version = "0.1.0"
 edition = "2021"
 build = "build.rs"
+publish = false
+
+[workspace]
+members = [".", "entity", "migration"]
 
 [features]
 default = ["tui"]
 
 # general
 tui = ["dep:ratatui", "dep:crossterm", "dep:ansi-to-tui"]
-johnny = ["dep:imgurs", "verbose"]
+johnny = ["dep:imgurs", "verbose", "sqlite"]
 verbose = []
 
 # database drivers
-sqlite = ["dep:sea-orm", "sea-orm?/sqlx-sqlite"]
-postgres = ["dep:sea-orm", "sea-orm?/sqlx-postgres"]
-mysql = ["dep:sea-orm", "sea-orm?/sqlx-mysql"]
+postgres = ["dep:sea-orm", "sea-orm?/sqlx-postgres", "dep:entity", "dep:migration"]
+mysql = ["dep:sea-orm", "sea-orm?/sqlx-mysql", "dep:entity", "dep:migration"]
+sqlite = ["dep:sea-orm", "sea-orm?/sqlx-sqlite", "dep:entity", "dep:migration"]
 
 # modules
-autorole = []
+autorole = [] # needs database driver
 
 [dependencies]
+entity = { path = "entity", optional = true }
+migration = { path = "migration", optional = true }
 ansi-to-tui = { version = "3.1.0", optional = true }
 chrono = "0.4.26"
 crossterm = { version = "0.26.1", optional = true }
@@ -39,3 +45,7 @@ opt-level = 0
 
 [profile.release]
 opt-level = 3
+
+[build-dependencies]
+migration = { path = "migration" }
+sea-orm-codegen = "0.11.3"

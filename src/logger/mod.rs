@@ -7,10 +7,11 @@ use chrono::Local;
 pub use entry::Entry;
 pub use level::LogLevel;
 #[cfg(feature = "tui")]
-use owo_colors::colors::Red;
-#[cfg(not(feature = "tui"))]
-use owo_colors::colors::{BrightWhite, Cyan, Yellow};
-use owo_colors::{colors::Green, OwoColorize, Stream::Stdout};
+use owo_colors::{
+    colors::{Green, Red},
+    OwoColorize,
+    Stream::Stdout,
+};
 use tokio::sync::mpsc;
 
 pub struct Logger {
@@ -81,6 +82,10 @@ impl Logger {
         self.log(LogLevel::Info, message, None).await
     }
 
+    pub async fn warn(&self, message: String, ctx: Option<&Context<'_>>) {
+        self.log(LogLevel::Warn, message, ctx).await
+    }
+
     pub async fn command(&self, ctx: &Context<'_>) {
         let author = ctx.author().name.clone();
         let command = ctx.command().name.clone();
@@ -111,9 +116,6 @@ impl Logger {
         )
         .await;
     }
-
-    // todo: impl
-    pub async fn event() {}
 }
 
 pub type Sender = mpsc::Sender<Entry>;

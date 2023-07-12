@@ -4,26 +4,36 @@ mod events;
 mod tui;
 
 use dotenvy_macro::dotenv as env;
+#[cfg(db)]
+use entity::{guild::Entity as Guild, user::Entity as User};
 #[cfg(feature = "johnny")]
 use imgurs::ImgurClient;
+#[cfg(db)]
+use johnny::db::{create_guild, create_user};
 #[cfg(feature = "tui")]
 use johnny::Bot;
 use johnny::{logger::Logger, Context, Data, Error};
 #[cfg(feature = "johnny")]
 use johnny::{JOHNNY_GALLERY_IDS, SUGGESTIONS_ID};
+#[cfg(db)]
+use migration::{Migrator, MigratorTrait};
 use poise::{serenity_prelude as serenity, Command, Event, Framework};
 #[cfg(db)]
-use sea_orm::Database;
+use sea_orm::{Database, EntityTrait};
 use std::sync::Arc;
+#[cfg(db)]
+use std::{collections::HashSet, sync::RwLock};
+
+// todo: run fresh migrations on first time run
 
 // ensure that only one of the database dirvers have been enabled
-// note: this will always error in vscode as all features are enabled for intellisense, but it will compile fine
+// ! this will always error in vscode as all features are enabled for intellisense, but it will compile fine
 #[cfg(multiple_db)]
-compile_error!("please choose only one of \"mysql\", \"sqlite\" or \"postgres\"");
+compile_error!("please choose only one of \"postgres\", \"mysql\" or \"sqlite\"");
 
 // ensure that a db driver has been selected alongside any features that require a db
 #[cfg(all(feature = "autorole", not(db)))]
-compile_error!("please choose one of \"mysql\", \"sqlite\" or \"postgres\", you need one of them enabled for autorole to work");
+compile_error!("please choose one of \"postgres\", \"mysql\", or \"sqlite\", you need one of them enabled for autorole to work");
 
 macro_rules! make_feat_list {
     ($($feat:expr),*) => {
@@ -51,10 +61,10 @@ pub async fn emit_event(
     match event {
         // ready
         Event::Ready { data_about_bot } => {
-            #[cfg(feature = "johnny")]
+            #[cfg(any(feature = "johnny", feature = "sqlite"))]
             return events::ready::run(ctx, data_about_bot, data).await;
-            #[cfg(not(feature = "johnny"))]
-            return events::ready::run(data_about_bot, data).await;
+            #[cfg(not(any(feature = "johnny", feature = "sqlite")))]
+            events::ready::run(data_about_bot, data).await
         }
 
         // thread create
@@ -76,8 +86,41 @@ pub async fn emit_event(
 async fn main() -> Result<(), Error> {
     // connect to the database
     // todo: pretty error if this does not work
+    // todo: ensure sqlite file exists
     #[cfg(db)]
-    let _db = Database::connect(env!("DB_URL")).await?;
+    let db = Database::connect(env!("DATABASE_URL")).await?;
+
+    // run migrations
+    #[cfg(db)]
+    Migrator::refresh(&db).await?;
+
+    // make a cache of all of the guilds that have documents in the database
+    #[cfg(db)]
+    let guilds_in_db = {
+        let mut container = HashSet::new();
+
+        Guild::find().all(&db).await?.iter().for_each(|guild| {
+            container.insert(serenity::GuildId(
+                guild.id.parse().expect("guild id should be a snowflake"),
+            ));
+        });
+
+        container
+    };
+
+    // do the same for users
+    #[cfg(db)]
+    let users_in_db = {
+        let mut container = HashSet::new();
+
+        User::find().all(&db).await?.iter().for_each(|user| {
+            container.insert(serenity::UserId(
+                user.id.parse().expect("user id should be a snowflake"),
+            ));
+        });
+
+        container
+    };
 
     #[cfg(feature = "tui")]
     let (bot, recievers) = Bot::new();
@@ -135,6 +178,47 @@ async fn main() -> Result<(), Error> {
                     Ok(())
                 })
             },
+            #[cfg(db)]
+            pre_command: |ctx| {
+                Box::pin(async move {
+                    let data = ctx.data();
+
+                    // ensure that the guild has a document in the database
+                    if let Some(id) = ctx.guild_id() {
+                        let guilds = &data.guilds_in_db;
+
+                        if !guilds.read().expect("should be readable").contains(&id) {
+                            Guild::insert(create_guild(id))
+                                .exec(&data.db)
+                                .await
+                                .expect("should be able to insert guild if connection is active");
+
+                            guilds.write().expect("should be writable").insert(id);
+                        }
+                    }
+
+                    // ensure that the user has a document in the database
+                    let author_id = ctx.author().id;
+                    let users = &data.users_in_db;
+
+                    if !users
+                        .read()
+                        .expect("should be readable")
+                        .contains(&author_id)
+                    {
+                        println!("{:?}", ctx.author().name);
+
+                        User::insert(create_user(author_id))
+                            .exec(&data.db)
+                            .await
+                            .expect("should be able to insert user if connection is active");
+
+                        users.write().expect("should be writable").insert(author_id);
+                    }
+
+                    ()
+                })
+            },
             #[cfg(feature = "verbose")]
             post_command: |ctx| Box::pin(async move { ctx.data().logger.command(&ctx).await }),
             ..Default::default()
@@ -149,6 +233,12 @@ async fn main() -> Result<(), Error> {
                     #[cfg(feature = "johnny")]
                     johnny_images,
                     logger,
+                    #[cfg(db)]
+                    db,
+                    #[cfg(db)]
+                    guilds_in_db: RwLock::new(guilds_in_db),
+                    #[cfg(db)]
+                    users_in_db: RwLock::new(users_in_db),
                 })
             })
         })

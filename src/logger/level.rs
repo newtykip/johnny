@@ -2,7 +2,7 @@
 pub enum LogLevel {
     Info,
     Command,
-    Event,
+    Warn,
 }
 
 impl ToString for LogLevel {
@@ -10,7 +10,7 @@ impl ToString for LogLevel {
         match self {
             LogLevel::Info => "INFO".to_string(),
             LogLevel::Command => "COMMAND".to_string(),
-            LogLevel::Event => "EVENT".to_string(),
+            LogLevel::Warn => "WARN".to_string(),
         }
     }
 }
