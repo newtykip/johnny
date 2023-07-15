@@ -26,8 +26,14 @@ impl Logger {
         Self { sender }
     }
 
-    async fn log(&self, level: LogLevel, message: String, ctx: Option<&Context<'_>>) {
+    async fn log(
+        &self,
+        level: LogLevel,
+        message: String,
+        #[allow(unused_variables)] ctx: Option<&Context<'_>>,
+    ) {
         // colour code booleans
+        #[cfg(tui)]
         let message = message
             .replace(
                 "true",
@@ -46,8 +52,11 @@ impl Logger {
             level,
             message,
             timestamp: Local::now(),
+            #[cfg(tui)]
             guild: ctx.and_then(|ctx| ctx.guild()),
+            #[cfg(tui)]
             user: ctx.map(|ctx| ctx.author().clone()),
+            #[cfg(tui)]
             channel: ctx.map(|ctx| ctx.channel_id()),
         };
 

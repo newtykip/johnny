@@ -139,16 +139,11 @@ async fn main() -> Result<(), Error> {
         container
     };
 
-    // create logger channels if applicable
-    #[cfg(tui)]
-    let (log_tx, log_rx) = mpsc::channel(32);
-
     // create logger
-    let logger = if cfg!(tui) {
-        Logger::new(Some(log_tx))
-    } else {
-        Logger::new(None)
-    };
+    #[cfg(tui)]
+    let logger = Logger::new(Some(mpsc::channel(32).0));
+    #[cfg(not(tui))]
+    let logger = Logger::new(None);
 
     // list enabled features
     let features = feature_list![

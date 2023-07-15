@@ -2,6 +2,8 @@
 use johnny::johnny_image;
 use johnny::preludes::command::*;
 
+// todo: add johnny image number
+
 async fn run(ctx: Context<'_>) -> Result<(), Error> {
     #[cfg(not(johnny))]
     ctx.defer_ephemeral().await?;
@@ -10,7 +12,9 @@ async fn run(ctx: Context<'_>) -> Result<(), Error> {
 
     // if the johnny feature is enabled, add a random johnny image
     #[cfg(johnny)]
-    let johnny_image = johnny_image(&ctx.data());
+    let (number, johnny_image) = johnny_image(&ctx.data());
+    #[cfg(johnny)]
+    let footer_text = format!("Image {}/{}", number, ctx.data().johnny_images.len());
 
     let reply = ctx
         .send(|msg| {
@@ -18,7 +22,10 @@ async fn run(ctx: Context<'_>) -> Result<(), Error> {
                 embed.clone_from(&base_embed);
 
                 #[cfg(johnny)]
-                return embed.title("meow!").image(&johnny_image);
+                return embed
+                    .title("meow!")
+                    .image(&johnny_image)
+                    .footer(|footer| footer.text(&footer_text));
 
                 #[cfg(not(johnny))]
                 embed.title("ping!")
@@ -39,7 +46,8 @@ async fn run(ctx: Context<'_>) -> Result<(), Error> {
                 #[cfg(johnny)]
                 return embed
                     .title(format!("meow! ({} ms)", ping))
-                    .image(johnny_image);
+                    .image(johnny_image)
+                    .footer(|footer| footer.text(footer_text));
 
                 #[cfg(not(johnny))]
                 embed.title(format!("ping! ({} ms)", ping))

@@ -1,4 +1,4 @@
-use image::{load_from_memory, DynamicImage, EncodableLayout, ImageError};
+use image::{load_from_memory, DynamicImage, ImageError};
 use johnny::{determine_avatar, preludes::command::*};
 use pride_overlay::{circle as circle_pride, overlay as overlay_pride, Flags, Opacity};
 use std::{borrow::Cow, io::Cursor, str::FromStr};
@@ -7,7 +7,7 @@ use strum::IntoEnumIterator;
 async fn flag_autocomplete(
     _ctx: Context<'_>,
     _partial: &str,
-) -> impl Iterator<AutocompleteChoice<String>> {
+) -> impl Iterator<Item = AutocompleteChoice<String>> {
     Flags::iter().map(|flag| {
         let flag = flag.to_string();
         AutocompleteChoice {

@@ -9,7 +9,7 @@ use poise::serenity_prelude::{ChannelId, EmojiId, ReactionType};
 use poise::serenity_prelude::{GuildId, UserId};
 use poise::serenity_prelude::{Member, User};
 #[cfg(johnny)]
-use rand::seq::SliceRandom;
+use rand::Rng;
 #[cfg(db)]
 use sea_orm::DatabaseConnection;
 use serenity::{builder::CreateEmbed, utils::Colour};
@@ -63,11 +63,11 @@ impl Default for Reactions {
 const EMBED_COLOUR: Colour = Colour::from_rgb(192, 238, 255);
 
 pub fn determine_avatar(user: &User, member: Option<Cow<'_, Member>>) -> String {
-    match member {
-        Some(member) => member.avatar_url(),
-        None => user.avatar_url(),
-    }
-    .unwrap_or(user.default_avatar_url())
+    member
+        .map(|x| x.avatar_url())
+        .flatten()
+        .or(user.avatar_url())
+        .unwrap_or(user.default_avatar_url())
 }
 
 /// Generate the base of any embed
@@ -92,9 +92,8 @@ pub const JOHNNY_GALLERY_IDS: [&str; 2] = ["oPluI3u", "Ca2YQ2O"];
 
 /// Get a random johnny image
 #[cfg(johnny)]
-pub fn johnny_image(data: &Data) -> String {
-    data.johnny_images
-        .choose(&mut rand::thread_rng())
-        .expect("there should be images of johnny loaded into the bot's data")
-        .clone()
+pub fn johnny_image(data: &Data) -> (usize, String) {
+    let index = rand::thread_rng().gen_range(0..data.johnny_images.len());
+
+    (index + 1, data.johnny_images[index].clone())
 }
