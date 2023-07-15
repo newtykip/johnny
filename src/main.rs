@@ -1,28 +1,28 @@
 mod commands;
 mod events;
-#[cfg(feature = "tui")]
+#[cfg(tui)]
 mod tui;
 
 use dotenvy_macro::dotenv as env;
-#[cfg(db)]
-use entity::{guild::Entity as Guild, user::Entity as User};
-#[cfg(feature = "johnny")]
+#[cfg(johnny)]
 use imgurs::ImgurClient;
 #[cfg(db)]
-use johnny::db::{create_guild, create_user};
-#[cfg(feature = "tui")]
-use johnny::Bot;
+use johnny::db::GetDB;
 use johnny::{logger::Logger, Context, Data, Error};
-#[cfg(feature = "johnny")]
+#[cfg(johnny)]
 use johnny::{JOHNNY_GALLERY_IDS, SUGGESTIONS_ID};
 #[cfg(db)]
 use migration::{Migrator, MigratorTrait};
 use poise::{serenity_prelude as serenity, Command, Event, Framework};
 #[cfg(db)]
-use sea_orm::{Database, EntityTrait};
+use sea_orm::Database;
 use std::sync::Arc;
 #[cfg(db)]
 use std::{collections::HashSet, sync::RwLock};
+#[cfg(sqlite)]
+use std::{fs::File, path::Path};
+#[cfg(tui)]
+use tokio::sync::mpsc;
 
 // todo: run fresh migrations on first time run
 
@@ -32,10 +32,10 @@ use std::{collections::HashSet, sync::RwLock};
 compile_error!("please choose only one of \"postgres\", \"mysql\" or \"sqlite\"");
 
 // ensure that a db driver has been selected alongside any features that require a db
-#[cfg(all(feature = "autorole", not(db)))]
+#[cfg(all(autorole, not(db)))]
 compile_error!("please choose one of \"postgres\", \"mysql\", or \"sqlite\", you need one of them enabled for autorole to work");
 
-macro_rules! make_feat_list {
+macro_rules! feature_list {
     ($($feat:expr),*) => {
         vec![
             $(
@@ -61,14 +61,14 @@ pub async fn emit_event(
     match event {
         // ready
         Event::Ready { data_about_bot } => {
-            #[cfg(any(feature = "johnny", feature = "sqlite"))]
+            #[cfg(any(johnny, sqlite))]
             return events::ready::run(ctx, data_about_bot, data).await;
-            #[cfg(not(any(feature = "johnny", feature = "sqlite")))]
+            #[cfg(not(any(johnny, sqlite)))]
             events::ready::run(data_about_bot, data).await
         }
 
         // thread create
-        #[cfg(feature = "johnny")]
+        #[cfg(johnny)]
         Event::ThreadCreate { thread } => {
             // suggestion created
             if thread.parent_id == Some(SUGGESTIONS_ID) {
@@ -84,9 +84,26 @@ pub async fn emit_event(
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    // connect to the database
+    // ensure sqlite file exists
+    #[cfg(sqlite)]
+    {
+        let path = env!("DATABASE_URL")
+            .split("://")
+            .last()
+            .expect("expected valid sqlite connection url");
+
+        // allow in-memory databases (although these are absolutely NOT recommended)
+        if path != ":memory:" {
+            let path = Path::new(path);
+
+            if !path.exists() {
+                File::create(path)?;
+            }
+        }
+    }
+
     // todo: pretty error if this does not work
-    // todo: ensure sqlite file exists
+    // connect to the database
     #[cfg(db)]
     let db = Database::connect(env!("DATABASE_URL")).await?;
 
@@ -94,46 +111,48 @@ async fn main() -> Result<(), Error> {
     #[cfg(db)]
     Migrator::refresh(&db).await?;
 
-    // make a cache of all of the guilds that have documents in the database
+    // guild cache
     #[cfg(db)]
     let guilds_in_db = {
         let mut container = HashSet::new();
 
-        Guild::find().all(&db).await?.iter().for_each(|guild| {
+        for guild in serenity::Guild::get_db_all(&db).await? {
             container.insert(serenity::GuildId(
                 guild.id.parse().expect("guild id should be a snowflake"),
             ));
-        });
+        }
 
         container
     };
 
-    // do the same for users
+    // user cache
     #[cfg(db)]
     let users_in_db = {
         let mut container = HashSet::new();
 
-        User::find().all(&db).await?.iter().for_each(|user| {
+        for user in serenity::User::get_db_all(&db).await? {
             container.insert(serenity::UserId(
                 user.id.parse().expect("user id should be a snowflake"),
             ));
-        });
+        }
 
         container
     };
 
-    #[cfg(feature = "tui")]
-    let (bot, recievers) = Bot::new();
+    // create logger channels if applicable
+    #[cfg(tui)]
+    let (log_tx, log_rx) = mpsc::channel(32);
 
-    #[cfg(feature = "tui")]
-    let logger = Logger::new(bot.senders.log.clone());
-
-    #[cfg(not(feature = "tui"))]
-    let logger = Logger::new();
+    // create logger
+    let logger = if cfg!(tui) {
+        Logger::new(Some(log_tx))
+    } else {
+        Logger::new(None)
+    };
 
     // list enabled features
     let features =
-        make_feat_list!["tui", "johnny", "verbose", "sqlite", "postgres", "mysql", "autorole"];
+        feature_list!["tui", "johnny", "verbose", "sqlite", "postgres", "mysql", "autorole"];
 
     if !features.is_empty() {
         logger
@@ -141,7 +160,7 @@ async fn main() -> Result<(), Error> {
             .await;
     }
 
-    #[cfg(feature = "johnny")]
+    #[cfg(johnny)]
     let johnny_images = {
         let client = ImgurClient::new(&env!("IMGUR_CLIENT_ID"));
         let mut images = vec![];
@@ -162,13 +181,14 @@ async fn main() -> Result<(), Error> {
         images
     };
 
-    #[allow(unused_mut)]
     // default commands are already in the vec
+    #[allow(unused_mut)]
     let mut commands: Vec<Command<Data, Error>> = vec![commands::ping()];
 
-    #[cfg(feature = "autorole")]
+    #[cfg(autorole)]
     commands.push(commands::autorole());
 
+    // create the bot's framework instance
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
             commands,
@@ -188,38 +208,30 @@ async fn main() -> Result<(), Error> {
                         let guilds = &data.guilds_in_db;
 
                         if !guilds.read().expect("should be readable").contains(&id) {
-                            Guild::insert(create_guild(id))
-                                .exec(&data.db)
+                            // ? log verbose?
+                            id.create_db(&data.db)
                                 .await
-                                .expect("should be able to insert guild if connection is active");
-
+                                .expect("db connection should be active");
                             guilds.write().expect("should be writable").insert(id);
                         }
                     }
 
                     // ensure that the user has a document in the database
-                    let author_id = ctx.author().id;
+                    let user = ctx.author();
                     let users = &data.users_in_db;
 
-                    if !users
-                        .read()
-                        .expect("should be readable")
-                        .contains(&author_id)
-                    {
-                        println!("{:?}", ctx.author().name);
-
-                        User::insert(create_user(author_id))
-                            .exec(&data.db)
+                    if !users.read().expect("should be readable").contains(&user.id) {
+                        // ? log verbose?
+                        user.create_db(&data.db)
                             .await
-                            .expect("should be able to insert user if connection is active");
-
-                        users.write().expect("should be writable").insert(author_id);
+                            .expect("db connection should be active");
+                        users.write().expect("should be writable").insert(user.id);
                     }
 
                     ()
                 })
             },
-            #[cfg(feature = "verbose")]
+            #[cfg(verbose)]
             post_command: |ctx| Box::pin(async move { ctx.data().logger.command(&ctx).await }),
             ..Default::default()
         })
@@ -230,7 +242,7 @@ async fn main() -> Result<(), Error> {
             Box::pin(async move {
                 poise::builtins::register_globally(ctx, &framework.options().commands).await?;
                 Ok(Data {
-                    #[cfg(feature = "johnny")]
+                    #[cfg(johnny)]
                     johnny_images,
                     logger,
                     #[cfg(db)]
@@ -246,18 +258,18 @@ async fn main() -> Result<(), Error> {
         .await?;
 
     // spawn bot
-    #[cfg(feature = "tui")]
+    #[cfg(tui)]
     tokio::spawn(async move { start_bot(framework).await });
 
-    #[cfg(not(feature = "tui"))]
+    #[cfg(not(tui))]
     start_bot(framework).await;
 
     // setup terminal if tui feature is enabled
-    #[cfg(feature = "tui")]
-    tui::prelude(recievers.log)?;
+    #[cfg(tui)]
+    tui::prelude(log_rx)?;
 
     // otherwise block the thread
-    #[cfg(not(feature = "tui"))]
+    #[cfg(not(tui))]
     loop {}
 
     #[allow(unreachable_code)]

@@ -6,6 +6,7 @@ pub static TABLE: Lazy<TableCreateStatement> = Lazy::new(|| {
         .table(Guild::Table)
         // guild snowflake
         .col(ColumnDef::new(Guild::Id).text().not_null().primary_key())
+        // is autorole enabled?
         .col(
             ColumnDef::new(Guild::Autorole)
                 .boolean()
@@ -32,7 +33,7 @@ impl MigrationTrait for Migration {
 }
 
 #[derive(Iden)]
-enum Guild {
+pub enum Guild {
     Table,
     Id,
     Autorole,

@@ -1,5 +1,8 @@
-use migration::{GUILD_TABLE, USER_TABLE};
+#[cfg(any(feature = "postgres", feature = "mysql", feature = "sqlite"))]
+use migration::TABLES;
+#[cfg(any(feature = "postgres", feature = "mysql", feature = "sqlite"))]
 use sea_orm_codegen::{DateTimeCrate, EntityTransformer, EntityWriterContext, WithSerde};
+#[cfg(any(feature = "postgres", feature = "mysql", feature = "sqlite"))]
 use std::{
     fs::File,
     io::Write,
@@ -20,14 +23,15 @@ macro_rules! cfg_aliases {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // generate entity files
-    let files = EntityTransformer::transform(vec![GUILD_TABLE.clone(), USER_TABLE.clone()])?
+    #[cfg(any(feature = "postgres", feature = "mysql", feature = "sqlite"))]
+    let files = EntityTransformer::transform(TABLES.clone())?
         .generate(&EntityWriterContext::new(
             false,
             WithSerde::None,
             false,
             DateTimeCrate::Time,
             Some("public".into()),
-            true,
+            false,
             false,
             false,
             vec![],
@@ -35,15 +39,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         ))
         .files;
 
+    #[cfg(any(feature = "postgres", feature = "mysql", feature = "sqlite"))]
     for out_file in files {
         let mut file = File::create(
             PathBuf::new()
-                .join("entity")
                 .join("src")
+                .join("db")
+                .join("entity")
                 .join(&out_file.name),
         )?;
 
-        let contents = if out_file.name != "lib.rs" {
+        let contents = if out_file.name != "mod.rs" {
             // pass the file to rustfmt
             let proc = Command::new("rustfmt")
                 .args(["/dev/fd/0", "--emit", "stdout", "--edition", "2021"])
@@ -69,10 +75,28 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     cfg_aliases! {
+        // general
+
+        // is the tui enabled?
+        tui = feature = "tui",
+        // is the bot johnny?
+        johnny = feature = "johnny",
+        // should the logger be verbose?
+        verbose = feature = "verbose",
+
+        // database drivers
+
+        // does the bot use sqlite?
+        sqlite = feature = "sqlite",
         // is a single database driver enabled?
         db = any(feature = "postgres", feature = "mysql", feature = "sqlite"),
         // are multiple of the database drivers enabled?
         multiple_db = any(all(feature = "postgres", feature = "mysql"), all(feature = "mysql", feature = "sqlite"), all(feature = "postgres", feature = "sqlite"), all(feature = "postgres", feature = "mysql", feature = "sqlite")),
+
+        // modules
+
+        // is autorole enabled?
+        autorole = feature = "autorole"
     }
 
     Ok(())

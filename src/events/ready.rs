@@ -1,12 +1,12 @@
 use johnny::{Data, Error};
-#[cfg(feature = "johnny")]
+#[cfg(johnny)]
 use poise::serenity_prelude::Activity;
-#[cfg(any(feature = "johnny", feature = "sqlite"))]
+#[cfg(any(johnny, sqlite))]
 use poise::serenity_prelude::Context;
 use poise::serenity_prelude::Ready;
 
 pub async fn run(
-    #[cfg(any(feature = "johnny", feature = "sqlite"))] ctx: &Context,
+    #[cfg(any(johnny, sqlite))] ctx: &Context,
     ready: &Ready,
     data: &Data,
 ) -> Result<(), Error> {
@@ -15,12 +15,12 @@ pub async fn run(
         .await;
 
     // set the activity
-    #[cfg(feature = "johnny")]
+    #[cfg(johnny)]
     ctx.set_activity(Activity::streaming(":3", "https://twitch.tv/monstercat"))
         .await;
 
     // ? is 100 really a sane quantity?
-    #[cfg(feature = "sqlite")]
+    #[cfg(sqlite)]
     if ctx.cache.guild_count() > 100 {
         data.logger
             .warn(

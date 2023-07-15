@@ -6,7 +6,7 @@ use crate::Context;
 use chrono::Local;
 pub use entry::Entry;
 pub use level::LogLevel;
-#[cfg(feature = "tui")]
+#[cfg(tui)]
 use owo_colors::{
     colors::{Green, Red},
     OwoColorize,
@@ -14,23 +14,18 @@ use owo_colors::{
 };
 use tokio::sync::mpsc;
 
+pub type Sender = mpsc::Sender<Entry>;
+pub type Reciever = mpsc::Receiver<Entry>;
+
 pub struct Logger {
-    #[cfg(feature = "tui")]
-    sender: Sender,
+    sender: Option<Sender>,
 }
 
 impl Logger {
-    #[cfg(feature = "tui")]
-    pub fn new(sender: Sender) -> Self {
+    pub fn new(sender: Option<Sender>) -> Self {
         Self { sender }
     }
 
-    #[cfg(not(feature = "tui"))]
-    pub fn new() -> Self {
-        Self {}
-    }
-
-    #[cfg(feature = "tui")]
     async fn log(&self, level: LogLevel, message: String, ctx: Option<&Context<'_>>) {
         // colour code booleans
         let message = message
@@ -55,68 +50,56 @@ impl Logger {
             user: ctx.map(|ctx| ctx.author().clone()),
         };
 
-        self.sender
-            .send(entry)
-            .await
-            .expect("should have been able to send log entry through channel to tui");
+        if cfg!(tui) {
+            self.sender
+                .as_ref()
+                .expect("sender should exist if tui is enabled")
+                .send(entry)
+                .await
+                .expect("should have been able to send log entry through channel to tui");
+        } else {
+            println!("{}", entry.to_string());
+        }
     }
 
-    #[cfg(not(feature = "tui"))]
-    async fn log(&self, level: LogLevel, message: String, _ctx: Option<&Context<'_>>) {
-        let entry = Entry {
-            level,
-            message,
-            timestamp: Local::now(),
-        };
+    pub async fn info(&self, message: String, mut ctx: Option<&Context<'_>>) {
+        if cfg!(not(tui)) {
+            ctx = None;
+        }
 
-        println!("{}", entry.to_string());
-    }
-
-    #[cfg(feature = "tui")]
-    pub async fn info(&self, message: String, ctx: Option<&Context<'_>>) {
         self.log(LogLevel::Info, message, ctx).await
     }
 
-    #[cfg(not(feature = "tui"))]
-    pub async fn info(&self, message: String, _ctx: Option<&Context<'_>>) {
-        self.log(LogLevel::Info, message, None).await
-    }
+    pub async fn warn(&self, message: String, mut ctx: Option<&Context<'_>>) {
+        if cfg!(not(tui)) {
+            ctx = None;
+        }
 
-    pub async fn warn(&self, message: String, ctx: Option<&Context<'_>>) {
         self.log(LogLevel::Warn, message, ctx).await
     }
 
     pub async fn command(&self, ctx: &Context<'_>) {
         let author = ctx.author().name.clone();
         let command = ctx.command().name.clone();
+        let guild = ctx.guild();
+        let ctx_opt = if cfg!(tui) { Some(ctx) } else { None };
 
-        #[cfg(not(feature = "johnny"))]
-        let context = if let Some(guild) = ctx.guild() {
-            guild.name
-        } else {
-            "DMs".to_string()
-        };
-
-        #[cfg(feature = "tui")]
         self.log(
             LogLevel::Command,
-            #[cfg(feature = "johnny")]
-            format!("{} ran {}", author, command),
-            #[cfg(not(feature = "johnny"))]
-            format!("{} ran {} in {}", author, command, context),
-            Some(ctx),
-        )
-        .await;
+            format!("{} ran {}", author, command)
+                + &if cfg!(johnny) {
+                    "".to_string()
+                } else {
+                    let context = if let Some(guild) = guild {
+                        guild.name
+                    } else {
+                        "DMs".to_string()
+                    };
 
-        #[cfg(not(feature = "tui"))]
-        self.log(
-            LogLevel::Command,
-            format!("{} ran {} in {}", author, command, context),
-            None,
+                    format!(" in {}", context)
+                },
+            ctx_opt,
         )
         .await;
     }
 }
-
-pub type Sender = mpsc::Sender<Entry>;
-pub type Reciever = mpsc::Receiver<Entry>;

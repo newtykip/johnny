@@ -18,6 +18,3 @@ Cargo.lock
 emit.rs
 ./johnny
 *.sqlite
-
-entity/src/*.rs
-!entity/src/lib.rs

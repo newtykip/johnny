@@ -1,16 +1,15 @@
-use entity::{guild, user};
-use poise::serenity_prelude::{GuildId, UserId};
-use sea_orm::ActiveValue::*;
+// todo: have models in memory which are occasionally synced with the database to reduce writes. drop these on an interval to ensure a low memory overhead.
 
-pub fn create_user(id: UserId) -> user::ActiveModel {
-    user::ActiveModel {
-        id: Set(id.to_string()),
-    }
-}
+use async_trait::async_trait;
+use sea_orm::{ActiveModelTrait, DatabaseConnection, DbErr, InsertResult, ModelTrait};
 
-pub fn create_guild(id: GuildId) -> guild::ActiveModel {
-    guild::ActiveModel {
-        id: Set(id.to_string()),
-        ..Default::default()
-    }
+mod entity;
+pub mod guild;
+pub mod user;
+
+#[async_trait]
+pub trait GetDB<M: ModelTrait, A: ActiveModelTrait> {
+    async fn get_db_all(db: &DatabaseConnection) -> Result<Vec<M>, DbErr>;
+    async fn get_db(&self, db: &DatabaseConnection) -> Result<Option<M>, DbErr>;
+    async fn create_db(&self, db: &DatabaseConnection) -> Result<InsertResult<A>, DbErr>;
 }

@@ -1,4 +1,4 @@
-use johnny::{apply_embed, create_embed, Context, Error};
+use johnny::{generate_base_embed, Context, Error};
 use poise::serenity_prelude::{ButtonStyle, Guild, InteractionResponseType, ReactionType};
 use serenity::{
     builder::{CreateButton, CreateComponents},
@@ -42,18 +42,18 @@ pub async fn autorole(ctx: Context<'_>) -> Result<(), Error> {
 
     let mut enabled = false; // todo: this should be in the database
     let guild = ctx.guild().unwrap(); // command is guild only so unwrap is safe
-    let mut embed = create_embed(&ctx).await;
-
-    embed
-        .title(format!("{} - autorole", guild.name))
-        .description("make meaniningful description soon (:"); // todo: do it.
-
-    // create the toggle button
+    let base_embed = generate_base_embed(ctx.author(), ctx.author_member().await);
 
     // send the message
     let mut reply = ctx
         .send(|msg| {
-            apply_embed(msg, &embed).components(|components| {
+            msg.embed(|embed| {
+                embed.clone_from(&base_embed);
+                embed
+                    .title(format!("{} - autorole", guild.name))
+                    .description("make meaniningful description soon (:") // todo: do it.
+            })
+            .components(|components| {
                 components.create_action_row(|row| row.add_button(toggle_button(&guild, &enabled)))
             })
         })
@@ -79,12 +79,15 @@ pub async fn autorole(ctx: Context<'_>) -> Result<(), Error> {
                     response
                         .kind(InteractionResponseType::DeferredUpdateMessage)
                         .interaction_response_data(|data| {
-                            data.add_embed(embed.title("hi").clone())
-                                .components(|components| {
-                                    components.create_action_row(|row| {
-                                        row.add_button(toggle_button(&guild, &enabled))
-                                    })
+                            data.embed(|embed| {
+                                embed.clone_from(&base_embed);
+                                embed.title("hi!")
+                            })
+                            .components(|components| {
+                                components.create_action_row(|row| {
+                                    row.add_button(toggle_button(&guild, &enabled))
                                 })
+                            })
                         })
                 })
                 .await

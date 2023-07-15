@@ -1,3 +1,3 @@
-#[cfg(feature = "johnny")]
+#[cfg(johnny)]
 pub mod johnny;
 pub mod ready;
