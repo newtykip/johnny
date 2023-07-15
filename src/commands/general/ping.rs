@@ -1,7 +1,6 @@
-use crate::{Context, Error};
-use johnny::generate_base_embed;
 #[cfg(johnny)]
 use johnny::johnny_image;
+use johnny::preludes::command::*;
 
 async fn run(ctx: Context<'_>) -> Result<(), Error> {
     #[cfg(not(johnny))]
@@ -53,14 +52,14 @@ async fn run(ctx: Context<'_>) -> Result<(), Error> {
 
 /// checks ping
 #[cfg(not(johnny))]
-#[poise::command(slash_command)]
+#[command(slash_command)]
 pub async fn ping(ctx: Context<'_>) -> Result<(), Error> {
     run(ctx).await
 }
 
 /// meow! (checks ping)
 #[cfg(johnny)]
-#[poise::command(slash_command, rename = "meow")]
+#[command(slash_command, rename = "meow")]
 pub async fn ping(ctx: Context<'_>) -> Result<(), Error> {
     run(ctx).await
 }

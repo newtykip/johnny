@@ -1,6 +1,13 @@
+#[cfg(autorole)]
 mod autorole;
-mod ping;
+mod general;
+#[cfg(image)]
+mod image;
 
 #[cfg(autorole)]
 pub use autorole::autorole;
-pub use ping::ping;
+
+#[cfg(image)]
+pub use self::image::pride;
+
+pub use general::ping;

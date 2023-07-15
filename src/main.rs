@@ -8,7 +8,7 @@ use dotenvy_macro::dotenv as env;
 use imgurs::ImgurClient;
 #[cfg(db)]
 use johnny::db::GetDB;
-use johnny::{logger::Logger, Context, Data, Error};
+use johnny::{logger::Logger, Data, Error};
 #[cfg(johnny)]
 use johnny::{JOHNNY_GALLERY_IDS, SUGGESTIONS_ID};
 #[cfg(db)]
@@ -151,8 +151,9 @@ async fn main() -> Result<(), Error> {
     };
 
     // list enabled features
-    let features =
-        feature_list!["tui", "johnny", "verbose", "sqlite", "postgres", "mysql", "autorole"];
+    let features = feature_list![
+        "tui", "johnny", "verbose", "sqlite", "postgres", "mysql", "autorole", "image"
+    ];
 
     if !features.is_empty() {
         logger
@@ -187,6 +188,9 @@ async fn main() -> Result<(), Error> {
 
     #[cfg(autorole)]
     commands.push(commands::autorole());
+
+    #[cfg(image)]
+    commands.push(commands::pride());
 
     // create the bot's framework instance
     let framework = poise::Framework::builder()

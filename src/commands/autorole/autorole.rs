@@ -1,5 +1,4 @@
-use johnny::{generate_base_embed, Context, Error};
-use poise::serenity_prelude::{ButtonStyle, Guild, InteractionResponseType, ReactionType};
+use johnny::preludes::command::*;
 use serenity::{
     builder::{CreateButton, CreateComponents},
     futures::StreamExt,
@@ -31,7 +30,7 @@ fn toggle_button(guild: &Guild, enabled: &bool) -> CreateButton {
 }
 
 /// View or modify current autorole settings
-#[poise::command(
+#[command(
     slash_command,
     default_member_permissions = "MANAGE_GUILD",
     required_bot_permissions = "MANAGE_ROLES",

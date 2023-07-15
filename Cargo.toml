@@ -13,16 +13,17 @@ default = ["tui"]
 
 # general
 tui = ["dep:ratatui", "dep:crossterm", "dep:ansi-to-tui"]
-johnny = ["dep:imgurs", "verbose", "sqlite"]
+johnny = ["dep:imgurs", "verbose", "sqlite", "image"]
 verbose = []
 
 # database drivers
 postgres = ["dep:sea-orm", "sea-orm?/sqlx-postgres", "dep:migration"]
 mysql = ["dep:sea-orm", "sea-orm?/sqlx-mysql", "dep:migration"]
-sqlite = ["dep:sea-orm", "sea-orm?/sqlx-sqlite", "dep:migration"]
+sqlite = ["dep:sea-orm", "sea-orm?/sqlx-sqlite", "dep:migration", "migration?/autorole"]
 
 # modules
-autorole = ["migration?/autorole"] # requires: database driver
+autorole = ["migration?/autorole"] # requires: database driver, todo: put in moderation category
+image = ["dep:pride-overlay", "dep:reqwest", "dep:image", "dep:strum"] # todo: rename to pride, put in image category
 
 [dependencies]
 migration = { path = "migration", optional = true }
@@ -39,6 +40,10 @@ sea-orm = { version = "0.11.3", optional = true, features = ["runtime-tokio-rust
 serenity = { version = "0.11.5", default-features = false, features = ["client", "gateway", "rustls_backend", "model", "cache"] }
 tokio = { version = "1.28.2", features = ["full"] }
 async-trait = "0.1.71"
+pride-overlay = { version = "1.1.0", optional = true }
+reqwest = { version = "0.11.18", optional = true }
+image = { version = "0.24.6", optional = true }
+strum = { version = "0.25.0", optional = true, features = ["strum_macros"] }
 
 [build-dependencies]
 migration = { path = "migration" }

@@ -7,7 +7,7 @@ use owo_colors::{
     Stream::Stdout,
 };
 #[cfg(tui)]
-use poise::serenity_prelude::{Guild, User};
+use poise::serenity_prelude::{ChannelId, Guild, User};
 
 #[derive(Debug, Clone)]
 pub struct Entry {
@@ -18,6 +18,8 @@ pub struct Entry {
     pub guild: Option<Guild>,
     #[cfg(tui)]
     pub user: Option<User>,
+    #[cfg(tui)]
+    pub channel: Option<ChannelId>,
 }
 
 impl PartialEq for Entry {
@@ -33,6 +35,7 @@ impl ToString for Entry {
 
         #[cfg(not(tui))]
         let timestamp = timestamp.if_supports_color(Stdout, |text| text.fg::<Cyan>());
+            
         #[cfg(not(tui))]
         let level = level.if_supports_color(Stdout, |text| match self.level {
             LogLevel::Info => text.fg::<BrightWhite>().bold().to_string(),

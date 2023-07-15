@@ -1,6 +1,7 @@
 #[cfg(db)]
 pub mod db;
 pub mod logger;
+pub mod preludes;
 
 #[cfg(johnny)]
 use poise::serenity_prelude::{ChannelId, EmojiId, ReactionType};
@@ -61,6 +62,14 @@ impl Default for Reactions {
 
 const EMBED_COLOUR: Colour = Colour::from_rgb(192, 238, 255);
 
+pub fn determine_avatar(user: &User, member: Option<Cow<'_, Member>>) -> String {
+    match member {
+        Some(member) => member.avatar_url(),
+        None => user.avatar_url(),
+    }
+    .unwrap_or(user.default_avatar_url())
+}
+
 /// Generate the base of any embed
 pub fn generate_base_embed(user: &User, member: Option<Cow<'_, Member>>) -> CreateEmbed {
     let mut embed = CreateEmbed::default();
@@ -70,11 +79,7 @@ pub fn generate_base_embed(user: &User, member: Option<Cow<'_, Member>>) -> Crea
         None => user.name.clone(),
     };
 
-    let avatar = match member {
-        Some(member) => member.avatar_url(),
-        None => user.avatar_url(),
-    }
-    .unwrap_or(user.default_avatar_url());
+    let avatar = determine_avatar(user, member);
 
     embed
         .author(|author| author.name(name).icon_url(avatar))

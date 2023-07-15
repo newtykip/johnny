@@ -96,7 +96,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         // modules
 
         // is autorole enabled?
-        autorole = feature = "autorole"
+        autorole = feature = "autorole",
+
+        // is image enabled?
+        image = feature = "image"
     }
 
     Ok(())

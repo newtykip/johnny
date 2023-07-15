@@ -48,6 +48,7 @@ impl Logger {
             timestamp: Local::now(),
             guild: ctx.and_then(|ctx| ctx.guild()),
             user: ctx.map(|ctx| ctx.author().clone()),
+            channel: ctx.map(|ctx| ctx.channel_id()),
         };
 
         if cfg!(tui) {
@@ -80,7 +81,7 @@ impl Logger {
 
     pub async fn command(&self, ctx: &Context<'_>) {
         let author = ctx.author().name.clone();
-        let command = ctx.command().name.clone();
+        let command = ctx.command().qualified_name.clone();
         let guild = ctx.guild();
         let ctx_opt = if cfg!(tui) { Some(ctx) } else { None };
 
