@@ -1,4 +1,5 @@
 on: [release, workflow_dispatch]
+name: Release
 
 jobs:
   release:
