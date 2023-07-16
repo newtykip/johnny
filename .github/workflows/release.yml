@@ -70,5 +70,5 @@ jobs:
       - name: Publish release artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: johnny-${{ matrix.platform.os_name }}
+          name: johnny-${{ matrix.platform.os_name }}-${{ join(matrix.features, ',') }},${{ matrix.db }}${{ matrix.tui && ',tui' || '' }}
           path: "johnny*"
