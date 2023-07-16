@@ -1,5 +1,6 @@
-on: [push, pull_request]
 name: Clippy
+on: [push, pull_request]
+permissions: write-all
 
 jobs:
   clippy:
