@@ -43,6 +43,7 @@ you must pick one of the following database drivers to use any underlined featur
 the following flags are not recommended for most people who use this bot, but are documented for transparency.
 
 - **johnny** - for use in [newt's server (:](https://discord.gg/ywra9UeJGh) - you most likely do not want this, but you can if you'd like i suppose!
+- **db** - contains common dependencies for individual database drivers, you do not need to enable this yourself!
 - **development** - please only enable this if you are in a development environment! it will only bring you potential pain if not
 
 

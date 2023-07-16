@@ -91,13 +91,13 @@ pub async fn autorole(ctx: Context<'_>) -> Result<()> {
                         })
                 })
                 .await
-                .context("should have been able to respond to autorole toggle interaction");
+                .context("should have been able to respond to autorole toggle interaction")?;
         }
 
         ctx.data()
             .logger
             .info(format!("that is {:?}", enabled), Some(&ctx))
-            .await;
+            .await?;
     }
 
     // remove dangling components

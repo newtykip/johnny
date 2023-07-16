@@ -17,14 +17,16 @@ johnny = ["dep:imgurs", "dep:rand", "verbose", "sqlite", "pride"]
 verbose = []
 
 # database drivers
-postgres = ["dep:sea-orm", "sea-orm?/sqlx-postgres", "dep:migration", "dep:async-trait"]
-mysql = ["dep:sea-orm", "sea-orm?/sqlx-mysql", "dep:migration", "dep:async-trait"]
-sqlite = ["dep:sea-orm", "sea-orm?/sqlx-sqlite", "dep:migration", "migration?/autorole", "dep:async-trait"]
+db = ["dep:sea-orm", "dep:migration", "dep:async-trait", "dep:rust-format", "dep:sea-orm-codegen"]
+
+postgres = ["db", "sea-orm?/sqlx-postgres"]
+mysql = ["db", "sea-orm?/sqlx-mysql"]
+sqlite = ["db", "sea-orm?/sqlx-sqlite"]
 
 # moderation
 moderation = ["autorole"]
 
-autorole = ["migration?/autorole"] # requires: database driver
+autorole = [] # requires: database driver
 
 # image
 image = ["pride"]
@@ -58,8 +60,9 @@ serde = "1.0.171"
 anyhow = "1.0.72"
 
 [build-dependencies]
-migration = { path = "migration" }
-sea-orm-codegen = "0.11.3"
+migration = { path = "migration", optional = true }
+rust-format = { version = "0.3.4", optional = true }
+sea-orm-codegen = { version = "0.11.3", optional = true }
 
 [profile.dev]
 opt-level = 0

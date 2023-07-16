@@ -19,3 +19,4 @@ emit.rs
 ./johnny
 *.sqlite
 src/build_data.rs
+src/db/entity/*.rs

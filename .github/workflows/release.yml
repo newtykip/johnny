@@ -5,6 +5,7 @@ jobs:
   release:
     name: Release - ${{ matrix.platform.os_name }}, ${{ join(matrix.features, ',') }},${{ matrix.db }}${{ matrix.tui && ',tui' || '' }}
     strategy:
+      fail-fast: false
       matrix:
         db: [postgres, mysql, sqlite]
         # the feature combinations to compile - should be all combinations of modules
@@ -32,25 +33,23 @@ jobs:
     runs-on: ${{ matrix.platform.os }}
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v3
-      - name: Install toolchain
+
+      - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.platform.target }}
-      - name: Build binary (*nix)
-        shell: bash
-        run: |
-                    cargo build --release --target ${{ matrix.platform.target }} --no-default-features --features ${{ join(matrix.features, ',') }},${{ matrix.db }}${{ matrix.tui && ',tui' || '' }}
-        if: ${{ !contains(matrix.platform.os, 'windows') }}
-      - name: Build binary (Windows)
-        # We have to use the platform's native shell. If we use bash on
-        # Windows then OpenSSL complains that the Perl it finds doesn't use
-        # the platform's native paths and refuses to build.
-        shell: powershell
-        run: |
-                    & cargo build --release --target ${{ matrix.platform.target }} --no-default-features --features ${{ join(matrix.features, ',') }},${{ matrix.db }}${{ matrix.tui && ',tui' || '' }}
-        if: contains(matrix.platform.os, 'windows')
+
+      - name: Setup Rust caching
+        uses: Swatinem/rust-cache@v2
+
+      - name: Run build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release --target ${{ matrix.platform.target }} --no-default-features --features ${{ join(matrix.features, ',') }},${{ matrix.db }}${{ matrix.tui && ',tui' || '' }}
+
       - name: Strip binary
         shell: bash
         run: |

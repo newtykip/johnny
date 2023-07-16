@@ -2,5 +2,6 @@
 
 pub mod prelude;
 
+pub mod autorole;
 pub mod guild;
 pub mod user;

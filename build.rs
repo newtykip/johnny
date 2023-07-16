@@ -1,9 +1,9 @@
 #[cfg(any(feature = "postgres", feature = "mysql", feature = "sqlite"))]
 use migration::TABLES;
 #[cfg(any(feature = "postgres", feature = "mysql", feature = "sqlite"))]
-use sea_orm_codegen::{DateTimeCrate, EntityTransformer, EntityWriterContext, WithSerde};
+use rust_format::{Formatter, RustFmt};
 #[cfg(any(feature = "postgres", feature = "mysql", feature = "sqlite"))]
-use std::process::{Command, Stdio};
+use sea_orm_codegen::{DateTimeCrate, EntityTransformer, EntityWriterContext, WithSerde};
 use std::{env, fs::File, io::Write};
 
 /// Create an alias for `#[cfg]` attributes to use
@@ -18,7 +18,7 @@ macro_rules! cfg_aliases {
 }
 
 /// All features that should not be shown in the build_data.rs file
-const HIDDEN_FEATURES: [&str; 1] = ["default"];
+const HIDDEN_FEATURES: [&str; 2] = ["default", "db"];
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // figure out enabled features
@@ -33,6 +33,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         })
         .filter(|k| !HIDDEN_FEATURES.contains(&k.as_str()))
         .collect();
+
+    println!("cargo:warning=enabled features: {}", features.join(", "));
 
     // save all of this information in in build_data.rs
     let mut file = File::create("src/build_data.rs")?;
@@ -70,34 +72,12 @@ pub const FEATURES: [&str; {}] = [{}];"#,
     #[cfg(any(feature = "postgres", feature = "mysql", feature = "sqlite"))]
     for out_file in files {
         let mut file = File::create(format!("src/db/entity/{}", out_file.name))?;
-
-        let contents = if out_file.name != "mod.rs" {
-            // pass the file to rustfmt
-            let proc = Command::new("rustfmt")
-                .args(["/dev/fd/0", "--emit", "stdout", "--edition", "2021"])
-                .stdin(Stdio::piped())
-                .stdout(Stdio::piped())
-                .spawn()?;
-
-            proc.stdin
-                .as_ref()
-                .expect("it always exists")
-                .write_all(out_file.content.as_bytes())?;
-
-            let output = proc.wait_with_output()?;
-            let output = String::from_utf8_lossy(output.stdout.as_slice());
-            let pos = output.find("\n\n").unwrap() + 2;
-
-            output[pos..].to_string()
-        } else {
-            out_file.content.replace(" ;", ";")
-        };
-
-        file.write_all(contents.as_bytes())?;
+        let formatted = RustFmt::default().format_str(out_file.content)?;
+        file.write_all(formatted.as_bytes())?;
     }
 
     cfg_aliases! {
-        // general
+        // ! general
 
         // is the tui enabled?
         tui = feature = "tui",
@@ -106,7 +86,7 @@ pub const FEATURES: [&str; {}] = [{}];"#,
         // should the logger be verbose?
         verbose = feature = "verbose",
 
-        // database drivers
+        // ! database drivers
 
         // does the bot use sqlite?
         sqlite = feature = "sqlite",
@@ -115,7 +95,7 @@ pub const FEATURES: [&str; {}] = [{}];"#,
         // are multiple of the database drivers enabled?
         multiple_db = any(all(feature = "postgres", feature = "mysql"), all(feature = "mysql", feature = "sqlite"), all(feature = "postgres", feature = "sqlite"), all(feature = "postgres", feature = "mysql", feature = "sqlite")),
 
-        // modules
+        // ! modules
 
         // is autorole enabled?
         autorole = feature = "autorole",
@@ -123,7 +103,7 @@ pub const FEATURES: [&str; {}] = [{}];"#,
         // are pride commands enabled?
         pride = feature = "pride",
 
-        // other
+        // ! other
 
         // is the bot running in a development environment?
         dev = feature = "development",
