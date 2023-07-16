@@ -1,0 +1,73 @@
+on: [release, workflow_dispatch]
+
+jobs:
+  release:
+    name: Release - ${{ matrix.platform.os_name }}, ${{ join(matrix.features, ',') }},${{ matrix.db }}${{ matrix.tui && ',tui' || '' }}
+    strategy:
+      matrix:
+        db: [postgres, mysql, sqlite]
+        # the feature combinations to compile - should be all combinations of modules
+        features: [[moderation], [image], [moderation, image]]
+        tui: [true, false]
+        platform:
+          - os_name: Linux-x86_64
+            os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            bin: johnny
+            name: johnny-Linux-x86_64-musl.tar.gz
+
+          - os_name: Windows-x86_64
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
+            bin: johnny.exe
+            name: johnny-Windows-x86_64.zip
+
+          - os_name: macOS-x86_64
+            os: macOS-latest
+            target: x86_64-apple-darwin
+            bin: johnny
+            name: johnny-Darwin-x86_64.tar.gz
+
+    runs-on: ${{ matrix.platform.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Install toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform.target }}
+      - name: Build binary (*nix)
+        shell: bash
+        run: |
+                    cargo build --release --target ${{ matrix.platform.target }} --no-default-features --features ${{ join(matrix.features, ',') }},${{ matrix.db }}${{ matrix.tui && ',tui' || '' }}
+        if: ${{ !contains(matrix.platform.os, 'windows') }}
+      - name: Build binary (Windows)
+        # We have to use the platform's native shell. If we use bash on
+        # Windows then OpenSSL complains that the Perl it finds doesn't use
+        # the platform's native paths and refuses to build.
+        shell: powershell
+        run: |
+                    & cargo build --release --target ${{ matrix.platform.target }} --no-default-features --features ${{ join(matrix.features, ',') }},${{ matrix.db }}${{ matrix.tui && ',tui' || '' }}
+        if: contains(matrix.platform.os, 'windows')
+      - name: Strip binary
+        shell: bash
+        run: |
+                    strip target/${{ matrix.platform.target }}/release/${{ matrix.platform.bin }}
+        # strip doesn't work with cross-arch binaries on Linux or Windows.
+        if: ${{ matrix.platform.target != 'x86_64-pc-windows-msvc' }}
+      - name: Package as archive
+        shell: bash
+        run: |
+          cd target/${{ matrix.platform.target }}/release
+          if [[ "${{ matrix.platform.os }}" == "windows-latest" ]]; then
+            7z a ../../../${{ matrix.platform.name }} ${{ matrix.platform.bin }}
+          else
+            tar czvf ../../../${{ matrix.platform.name }} ${{ matrix.platform.bin }}
+          fi
+          cd -          
+      - name: Publish release artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: johnny-${{ matrix.platform.os_name }}
+          path: "johnny*"

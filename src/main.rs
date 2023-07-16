@@ -1,14 +1,19 @@
+mod build_data;
 mod commands;
+mod config;
 mod events;
 #[cfg(tui)]
 mod tui;
 
-use dotenvy_macro::dotenv as env;
+use anyhow::Error;
+pub use anyhow::{Context as AnyhowContext, Result};
+use build_data::FEATURES;
+use config::Config;
 #[cfg(johnny)]
 use imgurs::ImgurClient;
 #[cfg(db)]
 use johnny::db::GetDB;
-use johnny::{logger::Logger, Data, Error};
+use johnny::{logger::Logger, Data};
 #[cfg(johnny)]
 use johnny::{JOHNNY_GALLERY_IDS, SUGGESTIONS_ID};
 #[cfg(db)]
@@ -24,40 +29,26 @@ use std::{fs::File, path::Path};
 #[cfg(tui)]
 use tokio::sync::mpsc;
 
-// todo: run fresh migrations on first time run
-
 // ensure that only one of the database dirvers have been enabled
-// ! this will always error in vscode as all features are enabled for intellisense, but it will compile fine
-#[cfg(multiple_db)]
+#[cfg(all(multiple_db, not(dev)))]
 compile_error!("please choose only one of \"postgres\", \"mysql\" or \"sqlite\"");
 
 // ensure that a db driver has been selected alongside any features that require a db
 #[cfg(all(autorole, not(db)))]
 compile_error!("please choose one of \"postgres\", \"mysql\", or \"sqlite\", you need one of them enabled for autorole to work");
 
-macro_rules! feature_list {
-    ($($feat:expr),*) => {
-        vec![
-            $(
-                #[cfg(feature = $feat)]
-                $feat,
-            )*
-        ]
-    }
-}
-
-async fn start_bot(framework: Arc<Framework<Data, Error>>) {
+async fn start_bot(framework: Arc<Framework<Data, Error>>) -> Result<()> {
     framework
         .start_autosharded()
         .await
-        .expect("should have been able to start bot")
+        .context("should have been able to start bot")
 }
 
 pub async fn emit_event(
     event: &Event<'_>,
     #[allow(unused_variables)] ctx: &serenity::Context,
     data: &Data,
-) -> Result<(), Error> {
+) -> Result<()> {
     match event {
         // ready
         Event::Ready { data_about_bot } => {
@@ -83,14 +74,19 @@ pub async fn emit_event(
 }
 
 #[tokio::main]
-async fn main() -> Result<(), Error> {
+async fn main() -> Result<()> {
+    // load config
+    let config = Config::load()?;
+
     // ensure sqlite file exists
     #[cfg(sqlite)]
     {
-        let path = env!("DATABASE_URL")
+        let path = config
+            .database
+            .url
             .split("://")
             .last()
-            .expect("expected valid sqlite connection url");
+            .context("connection url must be valid")?;
 
         // allow in-memory databases (although these are absolutely NOT recommended)
         if path != ":memory:" {
@@ -105,7 +101,7 @@ async fn main() -> Result<(), Error> {
     // todo: pretty error if this does not work
     // connect to the database
     #[cfg(db)]
-    let db = Database::connect(env!("DATABASE_URL")).await?;
+    let db = Database::connect(config.database.url).await?;
 
     // run migrations
     #[cfg(db)]
@@ -118,7 +114,7 @@ async fn main() -> Result<(), Error> {
 
         for guild in serenity::Guild::get_db_all(&db).await? {
             container.insert(serenity::GuildId(
-                guild.id.parse().expect("guild id should be a snowflake"),
+                guild.id.parse().context("guild id should be a snowflake")?,
             ));
         }
 
@@ -132,7 +128,7 @@ async fn main() -> Result<(), Error> {
 
         for user in serenity::User::get_db_all(&db).await? {
             container.insert(serenity::UserId(
-                user.id.parse().expect("user id should be a snowflake"),
+                user.id.parse().context("user id should be a snowflake")?,
             ));
         }
 
@@ -141,24 +137,22 @@ async fn main() -> Result<(), Error> {
 
     // create logger
     #[cfg(tui)]
-    let logger = Logger::new(Some(mpsc::channel(32).0));
+    let (log_tx, log_rx) = mpsc::channel(32);
+    #[cfg(tui)]
+    let logger = Logger::new(Some(log_tx));
     #[cfg(not(tui))]
     let logger = Logger::new(None);
 
     // list enabled features
-    let features = feature_list![
-        "tui", "johnny", "verbose", "sqlite", "postgres", "mysql", "autorole", "image"
-    ];
-
-    if !features.is_empty() {
+    if !FEATURES.is_empty() {
         logger
-            .info(format!("Enabled features: {}", features.join(", ")), None)
-            .await;
+            .info(format!("Enabled features: {}", FEATURES.join(", ")), None)
+            .await?;
     }
 
     #[cfg(johnny)]
     let johnny_images = {
-        let client = ImgurClient::new(&env!("IMGUR_CLIENT_ID"));
+        let client = ImgurClient::new(&config.johnny.imgur);
         let mut images = vec![];
 
         for id in JOHNNY_GALLERY_IDS {
@@ -184,7 +178,7 @@ async fn main() -> Result<(), Error> {
     #[cfg(autorole)]
     commands.push(commands::autorole());
 
-    #[cfg(image)]
+    #[cfg(pride)]
     commands.push(commands::pride());
 
     // create the bot's framework instance
@@ -231,10 +225,12 @@ async fn main() -> Result<(), Error> {
                 })
             },
             #[cfg(verbose)]
-            post_command: |ctx| Box::pin(async move { ctx.data().logger.command(&ctx).await }),
+            post_command: |ctx| {
+                Box::pin(async move { ctx.data().logger.command(&ctx).await.unwrap() })
+            },
             ..Default::default()
         })
-        .token(env!("DISCORD_TOKEN"))
+        .token(config.token)
         .intents(serenity::GatewayIntents::non_privileged())
         .initialize_owners(true)
         .setup(|ctx, _ready, framework| {
@@ -258,10 +254,10 @@ async fn main() -> Result<(), Error> {
 
     // spawn bot
     #[cfg(tui)]
-    tokio::spawn(async move { start_bot(framework).await });
+    tokio::spawn(async move { start_bot(framework).await.unwrap() });
 
     #[cfg(not(tui))]
-    start_bot(framework).await;
+    start_bot(framework).await?;
 
     // setup terminal if tui feature is enabled
     #[cfg(tui)]

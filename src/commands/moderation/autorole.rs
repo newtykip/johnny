@@ -34,9 +34,10 @@ fn toggle_button(guild: &Guild, enabled: &bool) -> CreateButton {
     slash_command,
     default_member_permissions = "MANAGE_GUILD",
     required_bot_permissions = "MANAGE_ROLES",
-    guild_only
+    guild_only,
+    category = "moderation"
 )]
-pub async fn autorole(ctx: Context<'_>) -> Result<(), Error> {
+pub async fn autorole(ctx: Context<'_>) -> Result<()> {
     ctx.defer_ephemeral().await?;
 
     let mut enabled = false; // todo: this should be in the database
@@ -90,7 +91,7 @@ pub async fn autorole(ctx: Context<'_>) -> Result<(), Error> {
                         })
                 })
                 .await
-                .expect("should have been able to respond to autorole toggle interaction");
+                .context("should have been able to respond to autorole toggle interaction");
         }
 
         ctx.data()

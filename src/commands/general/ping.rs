@@ -2,9 +2,7 @@
 use johnny::johnny_image;
 use johnny::preludes::command::*;
 
-// todo: add johnny image number
-
-async fn run(ctx: Context<'_>) -> Result<(), Error> {
+async fn run(ctx: Context<'_>) -> Result<()> {
     #[cfg(not(johnny))]
     ctx.defer_ephemeral().await?;
 
@@ -14,7 +12,11 @@ async fn run(ctx: Context<'_>) -> Result<(), Error> {
     #[cfg(johnny)]
     let (number, johnny_image) = johnny_image(&ctx.data());
     #[cfg(johnny)]
-    let footer_text = format!("Image {}/{}", number, ctx.data().johnny_images.len());
+    let footer_text = format!(
+        "Image number {} out of {}",
+        number,
+        ctx.data().johnny_images.len()
+    );
 
     let reply = ctx
         .send(|msg| {
@@ -61,13 +63,13 @@ async fn run(ctx: Context<'_>) -> Result<(), Error> {
 /// checks ping
 #[cfg(not(johnny))]
 #[command(slash_command)]
-pub async fn ping(ctx: Context<'_>) -> Result<(), Error> {
+pub async fn ping(ctx: Context<'_>) -> Result<()> {
     run(ctx).await
 }
 
 /// meow! (checks ping)
 #[cfg(johnny)]
 #[command(slash_command, rename = "meow")]
-pub async fn ping(ctx: Context<'_>) -> Result<(), Error> {
+pub async fn ping(ctx: Context<'_>) -> Result<()> {
     run(ctx).await
 }

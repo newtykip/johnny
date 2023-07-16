@@ -2,6 +2,7 @@ use super::log::State as LogState;
 use crate::tui::{helpers::generate_controls, App, Views};
 use ansi_to_tui::IntoText;
 use crossterm::event::KeyCode;
+use johnny::preludes::tui::*;
 use ratatui::{
     backend::Backend,
     layout::{Constraint, Direction, Layout},
@@ -12,6 +13,7 @@ use ratatui::{
 
 // todo: dump logs to a file
 // todo: search logs
+// todo: modify config file
 
 pub struct State {
     pub following: bool,
@@ -87,7 +89,8 @@ pub fn draw<B: Backend>(f: &mut Frame<B>, app: &App, state: &State) {
                 ListItem::new(
                     log.to_string()
                         .into_text()
-                        .expect("log message should be convertable to text"),
+                        .context("log message should be convertable to text")
+                        .unwrap(),
                 )
                 .style({
                     let mut style = Style::default();

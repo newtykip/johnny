@@ -18,3 +18,4 @@ Cargo.lock
 emit.rs
 ./johnny
 *.sqlite
+src/build_data.rs

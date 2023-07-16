@@ -1,13 +1,11 @@
-#[cfg(autorole)]
-mod autorole;
 mod general;
-#[cfg(image)]
 mod image;
+mod moderation;
 
 #[cfg(autorole)]
-pub use autorole::autorole;
+pub use moderation::autorole;
 
-#[cfg(image)]
+#[cfg(pride)]
 pub use self::image::pride;
 
 pub use general::ping;

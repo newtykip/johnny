@@ -54,7 +54,7 @@ pub async fn overlay(
     flag: String,
     #[description = "The file to apply the effect to"] attachment: Option<Attachment>,
     #[description = "The opacity of the overlay"] opacity: Option<f32>,
-) -> Result<(), Error> {
+) -> Result<()> {
     ctx.defer().await?;
 
     let flag = Flags::from_str(&flag)?;
@@ -93,7 +93,7 @@ pub async fn circle(
     flag: String,
     #[description = "The file to apply the effect to"] attachment: Option<Attachment>,
     #[description = "The thickness of the ring"] thickness: Option<u8>,
-) -> Result<(), Error> {
+) -> Result<()> {
     ctx.defer().await?;
 
     let flag = Flags::from_str(&flag)?;
@@ -119,7 +119,7 @@ pub async fn circle(
 }
 
 /// Apply a pride flag to an image
-#[command(slash_command, subcommands("overlay", "circle"))]
-pub async fn pride(_ctx: Context<'_>) -> Result<(), Error> {
+#[command(slash_command, subcommands("overlay", "circle"), category = "image")]
+pub async fn pride(_ctx: Context<'_>) -> Result<()> {
     Ok(())
 }

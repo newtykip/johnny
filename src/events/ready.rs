@@ -1,18 +1,17 @@
-use johnny::{Data, Error};
+use johnny::preludes::event::*;
+use owo_colors::OwoColorize;
 #[cfg(johnny)]
 use poise::serenity_prelude::Activity;
-#[cfg(any(johnny, sqlite))]
-use poise::serenity_prelude::Context;
 use poise::serenity_prelude::Ready;
 
 pub async fn run(
     #[cfg(any(johnny, sqlite))] ctx: &Context,
     ready: &Ready,
     data: &Data,
-) -> Result<(), Error> {
+) -> Result<()> {
     data.logger
-        .info(format!("Logged in as {}", ready.user.name), None)
-        .await;
+        .info(format!("Logged in as {}", ready.user.name.bold()), None)
+        .await?;
 
     // set the activity
     #[cfg(johnny)]
@@ -30,7 +29,7 @@ pub async fn run(
                 ),
                 None,
             )
-            .await;
+            .await?;
     }
 
     Ok(())

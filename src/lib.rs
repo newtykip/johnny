@@ -3,6 +3,7 @@ pub mod db;
 pub mod logger;
 pub mod preludes;
 
+use anyhow::Error;
 #[cfg(johnny)]
 use poise::serenity_prelude::{ChannelId, EmojiId, ReactionType};
 #[cfg(db)]
@@ -28,7 +29,7 @@ pub struct Data {
     #[cfg(db)]
     pub users_in_db: RwLock<HashSet<UserId>>,
 }
-pub type Error = Box<dyn std::error::Error + Send + Sync>;
+
 pub type Context<'a> = poise::Context<'a, Data, Error>;
 
 // channel ids
@@ -64,8 +65,7 @@ const EMBED_COLOUR: Colour = Colour::from_rgb(192, 238, 255);
 
 pub fn determine_avatar(user: &User, member: Option<Cow<'_, Member>>) -> String {
     member
-        .map(|x| x.avatar_url())
-        .flatten()
+        .and_then(|x| x.avatar_url())
         .or(user.avatar_url())
         .unwrap_or(user.default_avatar_url())
 }

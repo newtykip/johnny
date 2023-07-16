@@ -3,6 +3,8 @@ mod entry;
 mod level;
 
 use crate::Context;
+pub use crate::Data;
+pub use anyhow::{Context as AnyhowContext, Result};
 use chrono::Local;
 pub use entry::Entry;
 pub use level::LogLevel;
@@ -31,7 +33,7 @@ impl Logger {
         level: LogLevel,
         message: String,
         #[allow(unused_variables)] ctx: Option<&Context<'_>>,
-    ) {
+    ) -> Result<()> {
         // colour code booleans
         #[cfg(tui)]
         let message = message
@@ -63,16 +65,18 @@ impl Logger {
         if cfg!(tui) {
             self.sender
                 .as_ref()
-                .expect("sender should exist if tui is enabled")
+                .context("sender should exist if tui is enabled")?
                 .send(entry)
                 .await
-                .expect("should have been able to send log entry through channel to tui");
+                .context("should have been able to send log entry through channel to tui")?;
         } else {
             println!("{}", entry.to_string());
         }
+
+        Ok(())
     }
 
-    pub async fn info(&self, message: String, mut ctx: Option<&Context<'_>>) {
+    pub async fn info(&self, message: String, mut ctx: Option<&Context<'_>>) -> Result<()> {
         if cfg!(not(tui)) {
             ctx = None;
         }
@@ -80,7 +84,7 @@ impl Logger {
         self.log(LogLevel::Info, message, ctx).await
     }
 
-    pub async fn warn(&self, message: String, mut ctx: Option<&Context<'_>>) {
+    pub async fn warn(&self, message: String, mut ctx: Option<&Context<'_>>) -> Result<()> {
         if cfg!(not(tui)) {
             ctx = None;
         }
@@ -88,7 +92,7 @@ impl Logger {
         self.log(LogLevel::Warn, message, ctx).await
     }
 
-    pub async fn command(&self, ctx: &Context<'_>) {
+    pub async fn command(&self, ctx: &Context<'_>) -> Result<()> {
         let author = ctx.author().name.clone();
         let command = ctx.command().qualified_name.clone();
         let guild = ctx.guild();
@@ -110,6 +114,6 @@ impl Logger {
                 },
             ctx_opt,
         )
-        .await;
+        .await
     }
 }
