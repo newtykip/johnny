@@ -12,29 +12,37 @@ jobs:
         features: [[moderation], [image], [moderation, image]]
         tui: [true, false]
         platform:
-          - os_name: Linux-x86_64
+          - os_name: linux-x86_64
             os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             bin: johnny
             name: johnny-Linux-x86_64-gnu.tar.gz
+            cross: false
+            cargo_command: cargo
 
-          - os_name: Linux-aarch64
+          - os_name: linux-aarch64
             os: ubuntu-latest
             target: aarch64-unknown-linux-gnu
             bin: johnny
             name: johnny-Linux-aarch64-gnu.tar.gz
+            cross: true
+            cargo_command: cross
 
-          - os_name: Windows-x86_64
+          - os_name: windows-x86_64
             os: windows-latest
             target: x86_64-pc-windows-msvc
             bin: johnny.exe
             name: johnny-Windows-x86_64.zip
+            cross: false
+            cargo_command: cargo
 
-          - os_name: macOS-x86_64
-            os: macOS-latest
+          - os_name: macos-x86_64
+            os: macos-latest
             target: x86_64-apple-darwin
             bin: johnny
             name: johnny-Darwin-x86_64.tar.gz
+            cross: false
+            cargo_command: cargo
 
     runs-on: ${{ matrix.platform.os }}
 
@@ -42,7 +50,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install Rust
+      - name: Install toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.platform.target }}
@@ -50,18 +58,20 @@ jobs:
       - name: Setup Rust caching
         uses: Swatinem/rust-cache@v2
 
-      - name: Run build
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --release --target ${{ matrix.platform.target }} --no-default-features --features ${{ join(matrix.features, ',') }},${{ matrix.db }}${{ matrix.tui && ',tui' || '' }}
+      - name: Install Cross
+        run: cargo install cross --git https://github.com/cross-rs/cross
+        if: ${{ matrix.platform.cross }}
 
-      - name: Strip binary
+      - name: Build binary (*nix)
         shell: bash
-        run: |
-                    strip target/${{ matrix.platform.target }}/release/${{ matrix.platform.bin }}
-        # strip doesn't work with cross-arch binaries on Linux or Windows.
-        if: ${{ matrix.platform.target != 'x86_64-pc-windows-msvc' }}
+        run: ${{ matrix.platform.cargo_command }} --release --target ${{ matrix.platform.target }} --no-default-features --features ${{ join(matrix.features, ',') }},${{ matrix.db }}${{ matrix.tui && ',tui' || '' }}
+        if: ${{ !contains(matrix.platform.os, 'windows') }}
+
+      - name: Build binary (Windows)
+        shell: powershell
+        run: ${{ matrix.platform.cargo_command }} --release --target ${{ matrix.platform.target }} --no-default-features --features ${{ join(matrix.features, ',') }},${{ matrix.db }}${{ matrix.tui && ',tui' || '' }}
+        if: ${{ contains(matrix.platform.os, 'windows') }}
+
       - name: Package as archive
         shell: bash
         run: |
@@ -72,6 +82,7 @@ jobs:
             tar czvf ../../../${{ matrix.platform.name }} ${{ matrix.platform.bin }}
           fi
           cd -          
+
       - name: Publish release artifacts
         uses: actions/upload-artifact@v3
         with:
