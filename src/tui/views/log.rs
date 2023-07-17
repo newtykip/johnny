@@ -3,7 +3,9 @@ use crate::tui::{
     helpers::{generate_button, generate_controls},
     App, Views,
 };
+use ansi_to_tui::IntoText;
 use crossterm::event::KeyCode;
+use johnny::preludes::tui::*;
 use ratatui::{
     backend::Backend,
     layout::{Constraint, Direction, Layout},
@@ -61,7 +63,7 @@ pub fn controls(key_code: &KeyCode, app: &mut App, main_state: &mut MainState, s
     }
 }
 
-pub fn draw<B: Backend>(f: &mut Frame<B>, app: &App, state: &State) {
+pub fn draw<B: Backend>(f: &mut Frame<B>, app: &App, state: &State) -> Result<()> {
     // is any button going to be rendered?
     let entry = &app.logs[app.log_index];
     let guild_exists = entry.guild.is_some();
@@ -90,7 +92,7 @@ pub fn draw<B: Backend>(f: &mut Frame<B>, app: &App, state: &State) {
         .split(f.size());
 
     // log on the top
-    let log = Paragraph::new(entry.to_string()).block(
+    let log = Paragraph::new(entry.to_string().into_text()?).block(
         Block::default()
             .borders(Borders::ALL)
             .title(entry.level.to_string()),
@@ -147,4 +149,6 @@ pub fn draw<B: Backend>(f: &mut Frame<B>, app: &App, state: &State) {
     let controls = generate_controls("Press backspace to return to the main view");
 
     f.render_widget(controls, chunks[if button_exists { 2 } else { 1 }]);
+
+    Ok(())
 }

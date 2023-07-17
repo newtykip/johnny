@@ -7,12 +7,13 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use johnny::logger::{self, Reciever};
+use johnny::preludes::tui::*;
 use ratatui::{
     backend::{Backend, CrosstermBackend},
     Terminal,
 };
 use std::{
-    io,
+    io::stdout,
     time::{Duration, Instant},
 };
 use views::{log, main};
@@ -48,9 +49,9 @@ impl Default for App {
     }
 }
 
-pub fn prelude(log_reciever: Reciever) -> io::Result<()> {
+pub fn prelude(log_reciever: Reciever) -> Result<()> {
     enable_raw_mode()?;
-    let mut stdout = io::stdout();
+    let mut stdout = stdout();
     execute!(stdout, EnterAlternateScreen)?;
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
@@ -69,7 +70,7 @@ pub fn prelude(log_reciever: Reciever) -> io::Result<()> {
 pub fn run_tui<B: Backend>(
     terminal: &mut Terminal<B>,
     mut log_reciever: logger::Reciever,
-) -> io::Result<()> {
+) -> Result<()> {
     let mut last_tick = Instant::now();
 
     // states
@@ -80,8 +81,8 @@ pub fn run_tui<B: Backend>(
     loop {
         // draw ui
         terminal.draw(|f| match app.view {
-            Views::Main => main::draw(f, &app, &main_state),
-            Views::Log => log::draw(f, &app, &log_state),
+            Views::Main => main::draw(f, &app, &main_state).unwrap(),
+            Views::Log => log::draw(f, &app, &log_state).unwrap(),
             #[allow(unreachable_patterns)]
             _ => unimplemented!(),
         })?;

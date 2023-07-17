@@ -1,5 +1,3 @@
-#[cfg(autorole)]
-mod autorole;
+use johnny::load_command;
 
-#[cfg(autorole)]
-pub use autorole::autorole;
+load_command!(autorole, autorole);

@@ -1,3 +1,3 @@
-mod ping;
+use johnny::load_command;
 
-pub use ping::ping;
+load_command!(ping);

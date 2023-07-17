@@ -1,5 +1,5 @@
 <div align="center">
-<img src="johnny.png" height="250">
+<img src="assets/johnny.png" height="250">
 <h3>johnny</h3>
 the least bloated all-in-one bot on discord
 </div>
@@ -44,10 +44,14 @@ the following flags are not recommended for most people who use this bot, but ar
 
 - **johnny** - for use in [newt's server (:](https://discord.gg/ywra9UeJGh) - you most likely do not want this, but you can if you'd like i suppose!
 - **db** - contains common dependencies for individual database drivers, you do not need to enable this yourself!
-- **development** - please only enable this if you are in a development environment! it will only bring you potential pain if not
+- **dev** - please only enable this if you are in a development environment! it will only bring you potential pain if not
 
 
 ## development
+
+### running code
+
+there is a special **dev** feature that will help you during your time developing johnny, and [run.sh](run.sh) enables this by default, alongside any feature names you provide as parameters to the script - i recommend you use this
 
 ### testing all feature combinations
 
@@ -77,6 +81,7 @@ tere are some neat things we'd like to have done within the near future.
 - generate a list of dependencies in this readme file with thank yous to the developers! Do the same for contributors! We love open-source!
 - web dashboard (I dread this, if someone would like to help give me a shout :])
 - come up for a new name for this thing or rename the **johnny** flag to avoid potential confusion
+- image server for animal commands (and so that i can stop depending on imgur for the johnny photos and allow for easy image submission!)
 
 and much much more (:
 

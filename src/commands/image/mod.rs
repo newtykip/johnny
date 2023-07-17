@@ -1,5 +1,3 @@
-#[cfg(pride)]
-mod pride;
+use johnny::load_command;
 
-#[cfg(pride)]
-pub use pride::pride;
+load_command!(pride, pride);

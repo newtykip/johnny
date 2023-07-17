@@ -1,6 +1,7 @@
 #[cfg(db)]
 pub mod db;
 pub mod logger;
+mod macros;
 pub mod preludes;
 
 use anyhow::Error;
@@ -28,9 +29,13 @@ pub struct Data {
     pub guilds_in_db: RwLock<HashSet<GuildId>>,
     #[cfg(db)]
     pub users_in_db: RwLock<HashSet<UserId>>,
+    #[cfg(db)]
+    pub members_in_db: RwLock<HashSet<(GuildId, UserId)>>,
 }
 
 pub type Context<'a> = poise::Context<'a, Data, Error>;
+
+pub const EPOCH: i64 = 1420070400000;
 
 // channel ids
 #[cfg(johnny)]

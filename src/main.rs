@@ -9,16 +9,17 @@ use anyhow::Error;
 pub use anyhow::{Context as AnyhowContext, Result};
 use build_data::FEATURES;
 use config::Config;
+use events::event_handler;
 #[cfg(johnny)]
 use imgurs::ImgurClient;
 #[cfg(db)]
 use johnny::db::GetDB;
-use johnny::{logger::Logger, Data};
 #[cfg(johnny)]
-use johnny::{JOHNNY_GALLERY_IDS, SUGGESTIONS_ID};
+use johnny::JOHNNY_GALLERY_IDS;
+use johnny::{logger::Logger, Data};
 #[cfg(db)]
 use migration::{Migrator, MigratorTrait};
-use poise::{serenity_prelude as serenity, Command, Event, Framework};
+use poise::{serenity_prelude as serenity, Command, Framework};
 #[cfg(db)]
 use sea_orm::Database;
 use std::sync::Arc;
@@ -29,7 +30,7 @@ use std::{fs::File, path::Path};
 #[cfg(tui)]
 use tokio::sync::mpsc;
 
-// ensure that only one of the database dirvers have been enabled
+// ensure that only one of the database drivers have been enabled
 #[cfg(all(multiple_db, not(dev)))]
 compile_error!("please choose only one of \"postgres\", \"mysql\" or \"sqlite\"");
 
@@ -42,35 +43,6 @@ async fn start_bot(framework: Arc<Framework<Data, Error>>) -> Result<()> {
         .start_autosharded()
         .await
         .context("should have been able to start bot")
-}
-
-pub async fn emit_event(
-    event: &Event<'_>,
-    #[allow(unused_variables)] ctx: &serenity::Context,
-    data: &Data,
-) -> Result<()> {
-    match event {
-        // ready
-        Event::Ready { data_about_bot } => {
-            #[cfg(any(johnny, sqlite))]
-            return events::ready::run(ctx, data_about_bot, data).await;
-            #[cfg(not(any(johnny, sqlite)))]
-            events::ready::run(data_about_bot, data).await
-        }
-
-        // thread create
-        #[cfg(johnny)]
-        Event::ThreadCreate { thread } => {
-            // suggestion created
-            if thread.parent_id == Some(SUGGESTIONS_ID) {
-                events::johnny::suggestion::run(ctx, thread).await
-            } else {
-                Ok(())
-            }
-        }
-
-        _ => Ok(()),
-    }
 }
 
 #[tokio::main]
@@ -135,6 +107,31 @@ async fn main() -> Result<()> {
         container
     };
 
+    // member cache
+    #[cfg(db)]
+    let members_in_db = {
+        let mut container = HashSet::new();
+
+        for member in serenity::Member::get_db_all(&db).await? {
+            container.insert((
+                serenity::GuildId(
+                    member
+                        .guild_id
+                        .parse()
+                        .context("guild id should be a snowflake")?,
+                ),
+                serenity::UserId(
+                    member
+                        .user_id
+                        .parse()
+                        .context("user id should be a snowflake")?,
+                ),
+            ));
+        }
+
+        container
+    };
+
     // create logger
     #[cfg(tui)]
     let (log_tx, log_rx) = mpsc::channel(32);
@@ -181,44 +178,80 @@ async fn main() -> Result<()> {
     #[cfg(pride)]
     commands.push(commands::pride());
 
+    #[cfg(animals)]
+    commands.push(commands::animal());
+
     // create the bot's framework instance
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
             commands,
             event_handler: |ctx, event, _framework, data| {
                 Box::pin(async move {
-                    emit_event(event, ctx, data).await?;
+                    event_handler(event, ctx, data).await?;
                     Ok(())
                 })
             },
             #[cfg(db)]
             pre_command: |ctx| {
+                // todo: consider doing this stuff on join
                 Box::pin(async move {
                     let data = ctx.data();
 
                     // ensure that the guild has a document in the database
                     if let Some(id) = ctx.guild_id() {
-                        let guilds = &data.guilds_in_db;
+                        let guild_cache = &data.guilds_in_db;
 
-                        if !guilds.read().expect("should be readable").contains(&id) {
+                        if !guild_cache
+                            .read()
+                            .expect("should be readable")
+                            .contains(&id)
+                        {
                             // ? log verbose?
                             id.create_db(&data.db)
                                 .await
                                 .expect("db connection should be active");
-                            guilds.write().expect("should be writable").insert(id);
+                            guild_cache.write().expect("should be writable").insert(id);
                         }
                     }
 
                     // ensure that the user has a document in the database
                     let user = ctx.author();
-                    let users = &data.users_in_db;
+                    let user_cache = &data.users_in_db;
 
-                    if !users.read().expect("should be readable").contains(&user.id) {
+                    if !user_cache
+                        .read()
+                        .expect("should be readable")
+                        .contains(&user.id)
+                    {
                         // ? log verbose?
                         user.create_db(&data.db)
                             .await
                             .expect("db connection should be active");
-                        users.write().expect("should be writable").insert(user.id);
+                        user_cache
+                            .write()
+                            .expect("should be writable")
+                            .insert(user.id);
+                    }
+
+                    // ensure that the member has a document in the database
+                    if let Some(member) = ctx.author_member().await {
+                        let member_cache = &data.members_in_db;
+
+                        if !member_cache
+                            .read()
+                            .expect("should be readable")
+                            .contains(&(member.guild_id, member.user.id))
+                        {
+                            // ? log verbose?
+                            member
+                                .create_db(&data.db)
+                                .await
+                                .expect("db connection should be active");
+                            member_cache
+                                .write()
+                                .expect("should be writable")
+                                .insert((member.guild_id, member.user.id));
+                        }
                     }
 
                     ()
@@ -246,6 +279,8 @@ async fn main() -> Result<()> {
                     guilds_in_db: RwLock::new(guilds_in_db),
                     #[cfg(db)]
                     users_in_db: RwLock::new(users_in_db),
+                    #[cfg(db)]
+                    members_in_db: RwLock::new(members_in_db),
                 })
             })
         })

@@ -5,9 +5,6 @@ edition = "2021"
 build = "build.rs"
 publish = false
 
-[workspace]
-members = [".", "migration"]
-
 [features]
 default = ["tui"]
 
@@ -17,7 +14,7 @@ johnny = ["dep:imgurs", "dep:rand", "verbose", "sqlite", "pride"]
 verbose = []
 
 # database drivers
-db = ["dep:sea-orm", "dep:migration", "dep:async-trait", "dep:rust-format", "dep:sea-orm-codegen"]
+db = ["dep:sea-orm", "dep:migration", "dep:async-trait", "dep:rust-format", "dep:sea-orm-codegen", "dep:rustflake", "dep:once_cell"]
 
 postgres = ["db", "sea-orm?/sqlx-postgres"]
 mysql = ["db", "sea-orm?/sqlx-mysql"]
@@ -34,30 +31,32 @@ image = ["pride"]
 pride = ["dep:pride-overlay", "dep:reqwest", "dep:image", "dep:strum"]
 
 # other
-development = ["dep:dotenvy_macro"] # never enable this in production
+dev = ["dep:dotenvy_macro"] # never enable this in production
 
 [dependencies]
-migration = { path = "migration", optional = true }
+ansi-to-tui = { version = "3.1.0", optional = true }
+anyhow = "1.0.72"
+async-trait = { version = "0.1.71", optional = true }
 chrono = "0.4.26"
 crossterm = { version = "0.26.1", optional = true }
 dotenvy_macro = { version = "0.15.7", optional = true }
+image = { version = "0.24.6", optional = true }
 imgurs = { version = "0.11.2", optional = true }
+migration = { path = "migration", optional = true }
+once_cell = { version = "1.18.0", optional = true }
 owo-colors = { version = "3.5.0", features = ["supports-colors"] }
 poise = "0.5.5"
+pride-overlay = { version = "1.1.0", optional = true }
 rand = { version = "0.8.5", optional = true }
 ratatui = { version = "0.21.0", optional = true }
-sea-orm = { version = "0.11.3", optional = true, features = ["runtime-tokio-rustls", "macros"] }
-serenity = { version = "0.11.5", default-features = false, features = ["client", "gateway", "rustls_backend", "model", "cache"] }
-tokio = { version = "1.28.2", features = ["full"] }
-pride-overlay = { version = "1.1.0", optional = true }
 reqwest = { version = "0.11.18", optional = true }
-image = { version = "0.24.6", optional = true }
-strum = { version = "0.25.0", optional = true }
-async-trait = { version = "0.1.71", optional = true }
-ansi-to-tui = { version = "3.1.0", optional = true }
-toml = "0.7.6"
+rustflake = { version = "0.1.1", optional = true }
+sea-orm = { version = "0.11.3", optional = true, features = ["runtime-tokio-rustls", "macros"] }
 serde = "1.0.171"
-anyhow = "1.0.72"
+serenity = { version = "0.11.5", default-features = false, features = ["client", "gateway", "rustls_backend", "model", "cache"] }
+strum = { version = "0.25.0", optional = true }
+tokio = { version = "1.28.2", features = ["full"] }
+toml = "0.7.6"
 
 [build-dependencies]
 migration = { path = "migration", optional = true }
