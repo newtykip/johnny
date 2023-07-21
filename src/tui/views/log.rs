@@ -84,7 +84,7 @@ pub fn draw<B: Backend>(f: &mut Frame<B>, app: &App, state: &State) -> Result<()
         .split(f.size());
 
     // log on the top
-    let log = Paragraph::new(entry.to_string().into_text()?).block(
+    let log = entry.paragraph().block(
         Block::default()
             .borders(Borders::ALL)
             .title(entry.level.to_string()),

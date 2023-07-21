@@ -1,5 +1,4 @@
-use johnny::preludes::event::*;
-use owo_colors::OwoColorize;
+use johnny::{logger::Style, preludes::event::*};
 #[cfg(johnny)]
 use poise::serenity_prelude::Activity;
 use poise::serenity_prelude::Ready;
@@ -10,7 +9,13 @@ pub async fn run(
     data: &Data,
 ) -> Result<()> {
     data.logger
-        .info(format!("Logged in as {}", ready.user.name.bold()), None)
+        .info(
+            vec![
+                ("Logged in as ".into(), None),
+                (ready.user.name.clone(), Some(Style::default().bold())),
+            ],
+            None,
+        )
         .await?;
 
     // set the activity
@@ -21,15 +26,7 @@ pub async fn run(
     // ? is 100 really a sane quantity?
     #[cfg(sqlite)]
     if ctx.cache.guild_count() > 100 {
-        data.logger
-            .warn(
-                format!(
-                    "Your server is in {} guilds. Consider migrating from sqlite to either postgres or mysql.",
-                    ctx.cache.guild_count()
-                ),
-                None,
-            )
-            .await?;
+        data.logger.warn(vec![("hi".into(), None)], None).await?;
     }
 
     Ok(())

@@ -146,7 +146,10 @@ async fn main() -> Result<()> {
     // list enabled features
     if !FEATURES.is_empty() {
         logger
-            .info(format!("Enabled features: {}", FEATURES.join(", ")), None)
+            .info(
+                vec![(format!("Enabled features: {}", FEATURES.join(", ")), None)],
+                None,
+            )
             .await?;
     }
 

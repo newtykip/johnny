@@ -77,13 +77,7 @@ pub fn draw<B: Backend>(f: &mut Frame<B>, app: &App, state: &State) -> Result<()
         app.logs
             .iter()
             .map(|log| {
-                ListItem::new(
-                    log.to_string()
-                        .into_text()
-                        .wrap_err("log message should be convertable to text")
-                        .unwrap(),
-                )
-                .style({
+                ListItem::new(log.text()).style({
                     let mut style = Style::default();
 
                     if Some(log) == app.logs.get(app.log_index) {
