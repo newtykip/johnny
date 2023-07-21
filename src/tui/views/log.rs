@@ -3,15 +3,7 @@ use crate::tui::{
     helpers::{generate_button, generate_controls},
     App, Views,
 };
-use ansi_to_tui::IntoText;
-use crossterm::event::KeyCode;
 use johnny::preludes::tui::*;
-use ratatui::{
-    backend::Backend,
-    layout::{Constraint, Direction, Layout},
-    widgets::{Block, Borders, Paragraph},
-    Frame,
-};
 
 #[derive(Default)]
 pub struct State {

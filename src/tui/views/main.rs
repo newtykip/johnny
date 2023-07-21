@@ -1,15 +1,6 @@
 use super::log::State as LogState;
 use crate::tui::{helpers::generate_controls, App, Views};
-use ansi_to_tui::IntoText;
-use crossterm::event::KeyCode;
 use johnny::preludes::tui::*;
-use ratatui::{
-    backend::Backend,
-    layout::{Constraint, Direction, Layout},
-    style::{Color, Style},
-    widgets::{Block, Borders, List, ListItem, ListState},
-    Frame,
-};
 
 // todo: dump logs to a file
 // todo: search logs

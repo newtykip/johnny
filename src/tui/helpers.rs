@@ -1,7 +1,4 @@
-use ratatui::{
-    style::{Color, Modifier, Style},
-    widgets::Paragraph,
-};
+use johnny::preludes::tui::*;
 
 pub fn generate_controls(text: &str) -> Paragraph {
     Paragraph::new(format!("{}, q to quit", text)).style(

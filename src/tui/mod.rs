@@ -2,16 +2,15 @@ mod helpers;
 mod views;
 
 use crossterm::{
-    event::{self, Event, KeyCode},
+    event::{self, Event},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use johnny::logger::{self, Reciever};
-use johnny::preludes::tui::*;
-use ratatui::{
-    backend::{Backend, CrosstermBackend},
-    Terminal,
+use johnny::{
+    logger::{self, Reciever},
+    preludes::tui::*,
 };
+use ratatui::{backend::CrosstermBackend, Terminal};
 use std::{
     io::stdout,
     time::{Duration, Instant},
