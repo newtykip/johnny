@@ -1,48 +1,59 @@
 on: [release, workflow_dispatch]
-name: Release
+name: Build binaries
 
 jobs:
   release:
-    name: Release - ${{ matrix.platform.os_name }}, ${{ join(matrix.features, ',') }},${{ matrix.db }}${{ matrix.tui && ',tui' || '' }}
+    name: ${{ matrix.platform.os_name }} - ${{ join(matrix.features, '') }},${{ matrix.db }}${{ matrix.tui && ',tui' || '' }}
     strategy:
       fail-fast: false
       matrix:
-        db: [postgres, mysql, sqlite]
+        db: [
+          # postgres,
+          # mysql,
+          sqlite
+        ]
         # the feature combinations to compile - should be all combinations of modules
-        features: [[moderation], [image], [moderation, image]]
-        tui: [true, false]
+        features: [
+          # [moderation],
+          # [image],
+          [moderation, image]
+        ]
+        tui: [
+          true,
+          # false
+        ]
         platform:
-          - os_name: linux-x86_64
-            os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-            bin: johnny
-            name: johnny-Linux-x86_64-gnu.tar.gz
-            cross: false
-            cargo_command: cargo
+          # - os_name: linux-x86_64
+          #   os: ubuntu-latest
+          #   target: x86_64-unknown-linux-gnu
+          #   bin: johnny
+          #   name: johnny-linux-x86_64-gnu.tar.gz
+          #   cross: false
+          #   cargo_command: cargo
 
           - os_name: linux-aarch64
             os: ubuntu-latest
             target: aarch64-unknown-linux-gnu
             bin: johnny
-            name: johnny-Linux-aarch64-gnu.tar.gz
+            name: johnny-linux-aarch64-gnu.tar.gz
             cross: true
             cargo_command: cross
 
-          - os_name: windows-x86_64
-            os: windows-latest
-            target: x86_64-pc-windows-msvc
-            bin: johnny.exe
-            name: johnny-Windows-x86_64.zip
-            cross: false
-            cargo_command: cargo
+          # - os_name: windows-x86_64
+          #   os: windows-latest
+          #   target: x86_64-pc-windows-msvc
+          #   bin: johnny.exe
+          #   name: johnny-windows-x86_64.zip
+          #   cross: false
+          #   cargo_command: cargo
 
-          - os_name: macos-x86_64
-            os: macos-latest
-            target: x86_64-apple-darwin
-            bin: johnny
-            name: johnny-Darwin-x86_64.tar.gz
-            cross: false
-            cargo_command: cargo
+          # - os_name: macos-x86_64
+          #   os: macos-latest
+          #   target: x86_64-apple-darwin
+          #   bin: johnny
+          #   name: johnny-darwin-x86_64.tar.gz
+          #   cross: false
+          #   cargo_command: cargo
 
     runs-on: ${{ matrix.platform.os }}
 
@@ -58,18 +69,22 @@ jobs:
       - name: Setup Rust caching
         uses: Swatinem/rust-cache@v2
 
-      - name: Install Cross
+      - name: Install cross
         run: cargo install cross --git https://github.com/cross-rs/cross
+        if: ${{ matrix.platform.cross }}
+        
+      - name: Clean the target directory
+        run: cargo clean
         if: ${{ matrix.platform.cross }}
 
       - name: Build binary (*nix)
         shell: bash
-        run: ${{ matrix.platform.cargo_command }} --release --target ${{ matrix.platform.target }} --no-default-features --features ${{ join(matrix.features, ',') }},${{ matrix.db }}${{ matrix.tui && ',tui' || '' }}
+        run: ${{ matrix.platform.cargo_command }} build --release --target ${{ matrix.platform.target }} --no-default-features --features ${{ join(matrix.features, ',') }},${{ matrix.db }}${{ matrix.tui && ',tui' || '' }}
         if: ${{ !contains(matrix.platform.os, 'windows') }}
 
-      - name: Build binary (Windows)
+      - name: Build binary (windows)
         shell: powershell
-        run: ${{ matrix.platform.cargo_command }} --release --target ${{ matrix.platform.target }} --no-default-features --features ${{ join(matrix.features, ',') }},${{ matrix.db }}${{ matrix.tui && ',tui' || '' }}
+        run: ${{ matrix.platform.cargo_command }} build --release --target ${{ matrix.platform.target }} --no-default-features --features ${{ join(matrix.features, ',') }},${{ matrix.db }}${{ matrix.tui && ',tui' || '' }}
         if: ${{ contains(matrix.platform.os, 'windows') }}
 
       - name: Package as archive

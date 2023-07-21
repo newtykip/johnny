@@ -72,6 +72,9 @@ strip = true
 lto = true
 codegen-units = 1
 
+[target.aarch64-unknown-linux-gnu]
+dockerfile = "./Dockerfile.linux-aarch64"
+
 [package.metadata.cargo-all-features]
 
 # we choose a database driver explicitly to prevent any forced compile errors
