@@ -1,6 +1,6 @@
 use super::entity::user::{ActiveModel, Entity, Model};
 use super::GetDB;
-use anyhow::{Context, Result};
+use crate::preludes::eyre::*;
 use async_trait::async_trait;
 use poise::serenity_prelude::{User, UserId};
 use sea_orm::{ActiveValue::*, DatabaseConnection, EntityTrait, InsertResult, ModelTrait};
@@ -9,14 +9,14 @@ async fn get_db_all(db: &DatabaseConnection) -> Result<Vec<Model>> {
     Entity::find()
         .all(db)
         .await
-        .context("failed to fetch all users from db")
+        .wrap_err("failed to fetch all users from db")
 }
 
 async fn get_db(db: &DatabaseConnection, id: &UserId) -> Result<Option<Model>> {
     Entity::find_by_id(id.to_string())
         .one(db)
         .await
-        .context(format!("failed to fetch user with id {} from db", id))
+        .wrap_err(format!("failed to fetch user with id {} from db", id))
 }
 
 async fn create_db(db: &DatabaseConnection, id: &UserId) -> Result<InsertResult<ActiveModel>> {
@@ -28,7 +28,7 @@ async fn create_db(db: &DatabaseConnection, id: &UserId) -> Result<InsertResult<
     Entity::insert(model)
         .exec(db)
         .await
-        .context(format!("failed to insert user with id {} into db", id))
+        .wrap_err(format!("failed to insert user with id {} into db", id))
 }
 
 async fn delete_db(db: &DatabaseConnection, id: &UserId) -> Result<()> {
@@ -36,7 +36,7 @@ async fn delete_db(db: &DatabaseConnection, id: &UserId) -> Result<()> {
         model
             .delete(db)
             .await
-            .context(format!("failed to delete user with id {} from db", id))?;
+            .wrap_err(format!("failed to delete user with id {} from db", id))?;
     }
 
     Ok(())

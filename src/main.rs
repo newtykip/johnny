@@ -5,8 +5,6 @@ mod events;
 #[cfg(tui)]
 mod tui;
 
-use anyhow::Error;
-pub use anyhow::{Context as AnyhowContext, Result};
 use build_data::FEATURES;
 use config::Config;
 use events::event_handler;
@@ -16,7 +14,7 @@ use imgurs::ImgurClient;
 use johnny::db::GetDB;
 #[cfg(johnny)]
 use johnny::JOHNNY_GALLERY_IDS;
-use johnny::{logger::Logger, Data};
+use johnny::{logger::Logger, preludes::eyre::*, Data};
 #[cfg(db)]
 use migration::{Migrator, MigratorTrait};
 use poise::{serenity_prelude as serenity, Command, Framework};
@@ -42,11 +40,13 @@ async fn start_bot(framework: Arc<Framework<Data, Error>>) -> Result<()> {
     framework
         .start_autosharded()
         .await
-        .context("should have been able to start bot")
+        .wrap_err("should have been able to start bot")
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    color_eyre::install()?;
+
     // load config
     let config = Config::load()?;
 
@@ -58,7 +58,7 @@ async fn main() -> Result<()> {
             .url
             .split("://")
             .last()
-            .context("connection url must be valid")?;
+            .wrap_err("connection url must be valid")?;
 
         // allow in-memory databases (although these are absolutely NOT recommended)
         if path != ":memory:" {
@@ -86,7 +86,10 @@ async fn main() -> Result<()> {
 
         for guild in serenity::Guild::get_db_all(&db).await? {
             container.insert(serenity::GuildId(
-                guild.id.parse().context("guild id should be a snowflake")?,
+                guild
+                    .id
+                    .parse()
+                    .wrap_err("guild id should be a snowflake")?,
             ));
         }
 
@@ -100,7 +103,7 @@ async fn main() -> Result<()> {
 
         for user in serenity::User::get_db_all(&db).await? {
             container.insert(serenity::UserId(
-                user.id.parse().context("user id should be a snowflake")?,
+                user.id.parse().wrap_err("user id should be a snowflake")?,
             ));
         }
 
@@ -118,13 +121,13 @@ async fn main() -> Result<()> {
                     member
                         .guild_id
                         .parse()
-                        .context("guild id should be a snowflake")?,
+                        .wrap_err("guild id should be a snowflake")?,
                 ),
                 serenity::UserId(
                     member
                         .user_id
                         .parse()
-                        .context("user id should be a snowflake")?,
+                        .wrap_err("user id should be a snowflake")?,
                 ),
             ));
         }

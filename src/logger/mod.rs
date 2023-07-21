@@ -2,9 +2,7 @@
 mod entry;
 mod level;
 
-use crate::Context;
-pub use crate::Data;
-pub use anyhow::{Context as AnyhowContext, Result};
+use crate::{preludes::eyre::*, Context};
 use chrono::Local;
 pub use entry::Entry;
 pub use level::LogLevel;
@@ -65,10 +63,10 @@ impl Logger {
         if cfg!(tui) {
             self.sender
                 .as_ref()
-                .context("sender should exist if tui is enabled")?
+                .wrap_err("sender should exist if tui is enabled")?
                 .send(entry)
                 .await
-                .context("should have been able to send log entry through channel to tui")?;
+                .wrap_err("should have been able to send log entry through channel to tui")?;
         } else {
             println!("{}", entry.to_string());
         }

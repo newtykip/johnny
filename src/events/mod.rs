@@ -1,7 +1,6 @@
-use ::johnny::Data;
 #[cfg(johnny)]
 use ::johnny::SUGGESTIONS_ID;
-use anyhow::Result;
+use ::johnny::{preludes::eyre::*, Data};
 use poise::Event;
 use serenity::client::Context;
 

@@ -89,7 +89,7 @@ pub fn draw<B: Backend>(f: &mut Frame<B>, app: &App, state: &State) -> Result<()
                 ListItem::new(
                     log.to_string()
                         .into_text()
-                        .context("log message should be convertable to text")
+                        .wrap_err("log message should be convertable to text")
                         .unwrap(),
                 )
                 .style({

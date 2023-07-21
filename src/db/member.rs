@@ -1,7 +1,6 @@
 use super::entity::member::{ActiveModel, Column, Entity, Model};
 use super::GetDB;
-use crate::EPOCH;
-use anyhow::{Context, Result};
+use crate::{preludes::eyre::*, EPOCH};
 use async_trait::async_trait;
 use once_cell::sync::Lazy;
 use poise::serenity_prelude::Member;
@@ -19,7 +18,7 @@ impl GetDB<Model, ActiveModel> for Member {
         Entity::find()
             .all(db)
             .await
-            .context("failed to fetch all users from db")
+            .wrap_err("failed to fetch all users from db")
     }
 
     async fn get_db(&self, db: &DatabaseConnection) -> Result<Option<Model>> {
@@ -31,10 +30,12 @@ impl GetDB<Model, ActiveModel> for Member {
             .filter(Column::GuildId.eq(guild_id.to_string()))
             .one(db)
             .await
-            .context(format!(
-                "failed to fetch member with user id {}, guild id {} from db",
-                user_id, guild_id
-            ))
+            .wrap_err({
+                format!(
+                    "failed to fetch member with user id {}, guild id {} from db",
+                    user_id, guild_id
+                )
+            })
     }
 
     async fn create_db(&self, db: &DatabaseConnection) -> Result<InsertResult<ActiveModel>> {
@@ -48,18 +49,22 @@ impl GetDB<Model, ActiveModel> for Member {
             ..Default::default()
         };
 
-        Entity::insert(model).exec(db).await.context(format!(
-            "failed to insert member with user id {}, guild id {} into db",
-            user_id, guild_id
-        ))
+        Entity::insert(model).exec(db).await.wrap_err({
+            format!(
+                "failed to insert member with user id {}, guild id {} into db",
+                user_id, guild_id
+            )
+        })
     }
 
     async fn delete_db(&self, db: &DatabaseConnection) -> Result<()> {
         if let Some(model) = self.get_db(db).await? {
-            model.delete(db).await.context(format!(
-                "failed to delete member with user id {}, guild id {} from db",
-                self.user.id, self.guild_id
-            ))?;
+            model.delete(db).await.wrap_err({
+                format!(
+                    "failed to delete member with user id {}, guild id {} from db",
+                    self.user.id, self.guild_id
+                )
+            })?;
         }
 
         Ok(())

@@ -1,6 +1,6 @@
-pub use anyhow::{Context as AnyhowContext, Result};
 #[cfg(dev)]
 use dotenvy_macro::dotenv as env;
+use johnny::preludes::eyre::*;
 use serde::{Deserialize, Serialize};
 #[cfg(not(dev))]
 use std::fs::read_to_string;
@@ -47,9 +47,10 @@ impl Config {
         #[cfg(not(dev))]
         toml::from_str::<Config>(
             read_to_string("config.toml")
-                .context("config.toml should exist")?
+                .wrap_err("config.toml should exist")
+                .suggestion("create a config.toml file, you can find an example at https://github.com/newtykins/johnny/blob/main/config.toml.example")?
                 .as_str(),
         )
-        .context("config.toml should be valid toml")
+        .wrap_err("config.toml should be valid toml")
     }
 }

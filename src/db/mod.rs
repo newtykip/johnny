@@ -7,7 +7,7 @@ mod guild;
 mod member;
 mod user;
 
-use anyhow::Result;
+use crate::preludes::eyre::*;
 use async_trait::async_trait;
 #[cfg(autorole)]
 pub use autorole::AutoroleDB;

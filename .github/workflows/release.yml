@@ -3,42 +3,52 @@ name: Build binaries
 
 jobs:
   release:
-    name: ${{ matrix.platform.os_name }} - ${{ join(matrix.feaurtes, ',') }},${{ matrix.db }}${{ matrix.tui && ',tui' || '' }}
+    name: ${{ matrix.platform.os_name }} - ${{ join(matrix.features, ',') }},${{ matrix.db }}${{ matrix.tui && ',tui' || '' }}
     runs-on: ${{ matrix.platform.os }}
     strategy:
       fail-fast: false
       matrix:
         # the database driver to compile with
-        db: [postgres, mysql, sqlite]
+        db: [
+          # postgres,
+          # mysql,
+          sqlite
+        ]
         # the feature combinations to compile - should be all combinations of modules
-        features: [[moderation], [image], [moderation, image]]
+        features: [
+          # [moderation], [image],
+          [moderation, image]
+        ]
         # whether the tui feature flag should be enabled or not
-        tui: [true, false]
+        tui: [
+          true,
+          # false
+        ]
         platform:
           # x86_64
-          - os_name: linux-x86_64
-            os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-            bin: johnny
-            name: johnny-linux-x86_64-gnu.tar.gz
-            cross: false
-            cargo_command: cargo
+          # - os_name: linux-x86_64
+          #   os: ubuntu-latest
+          #   target: x86_64-unknown-linux-gnu
+          #   bin: johnny
+          #   name: johnny-linux-x86_64-gnu.tar.gz
+          #   cross: false
+          #   cargo_command: cargo
 
-          - os_name: windows-x86_64
-            os: windows-latest
-            target: x86_64-pc-windows-msvc
-            bin: johnny.exe
-            name: johnny-windows-x86_64.zip
-            cross: false
-            cargo_command: cargo
+          # - os_name: windows-x86_64
+          #   os: windows-latest
+          #   target: x86_64-pc-windows-msvc
+          #   bin: johnny.exe
+          #   name: johnny-windows-x86_64.zip
+          #   cross: false
+          #   cargo_command: cargo
 
-          - os_name: macos-x86_64
-            os: macos-latest
-            target: x86_64-apple-darwin
-            bin: johnny
-            name: johnny-darwin-x86_64.tar.gz
-            cross: false
-            cargo_command: cargo
+          # - os_name: macos-x86_64
+          #   os: macos-latest
+          #   target: x86_64-apple-darwin
+          #   bin: johnny
+          #   name: johnny-darwin-x86_64.tar.gz
+          #   cross: false
+          #   cargo_command: cargo
 
           # arm64
           - os_name: linux-aarch64
@@ -52,6 +62,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      # prepare buildx
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      # prepare toolchain
       - name: Install toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -61,6 +79,7 @@ jobs:
         run: cargo install cross --git https://github.com/cross-rs/cross
         if: ${{ matrix.platform.cross }}
 
+      # build binary
       - name: Build binary (*nix)
         shell: bash
         run: ${{ matrix.platform.cargo_command }} build --release --target ${{ matrix.platform.target }} --no-default-features --features ${{ join(matrix.features, ',') }},${{ matrix.db }}${{ matrix.tui && ',tui' || '' }}
@@ -71,6 +90,7 @@ jobs:
         run: ${{ matrix.platform.cargo_command }} build --release --target ${{ matrix.platform.target }} --no-default-features --features ${{ join(matrix.features, ',') }},${{ matrix.db }}${{ matrix.tui && ',tui' || '' }}
         if: ${{ contains(matrix.platform.os, 'windows') }}
 
+      # upload
       - name: Package as archive
         shell: bash
         run: |

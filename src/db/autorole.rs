@@ -1,6 +1,5 @@
 use super::entity::autorole::{ActiveModel, Entity};
-use crate::EPOCH;
-use anyhow::{Context, Result};
+use crate::{preludes::eyre::*, EPOCH};
 use async_trait::async_trait;
 use once_cell::sync::Lazy;
 use poise::serenity_prelude::{Role, RoleId};
@@ -19,12 +18,12 @@ pub async fn delete_db(db: &DatabaseConnection, id: RoleId) -> Result<()> {
     if let Some(model) = Entity::find_by_id(id.to_string())
         .one(db)
         .await
-        .context(format!("failed to fetch autorole with id {} from db", id))?
+        .wrap_err(format!("failed to fetch autorole with id {} from db", id))?
     {
         model
             .delete(db)
             .await
-            .context(format!("failed to delete autorole with id {} from db", id))?;
+            .wrap_err(format!("failed to delete autorole with id {} from db", id))?;
     }
 
     Ok(())
@@ -40,7 +39,7 @@ impl AutoroleDB for Role {
             ..Default::default()
         };
 
-        Entity::insert(model).exec(db).await.context(format!(
+        Entity::insert(model).exec(db).await.wrap_err(format!(
             "failed to insert autorole with id {} into db",
             self.id
         ))

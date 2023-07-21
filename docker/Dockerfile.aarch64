@@ -2,4 +2,4 @@ FROM ghcr.io/cross-rs/aarch64-unknown-linux-gnu:latest
 
 RUN dpkg --add-architecture arm64 && \
     apt update && \
-    apt install --y libssl-dev:arm64 sqlite3:arm64
+    apt install -y libssl-dev:arm64 sqlite3:arm64

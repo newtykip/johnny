@@ -1,7 +1,7 @@
 // ! general
 mod general;
 
-pub use general::ping;
+pub use general::*;
 
 // ! moderation
 mod moderation;

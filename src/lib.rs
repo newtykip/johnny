@@ -4,12 +4,12 @@ pub mod logger;
 mod macros;
 pub mod preludes;
 
-use anyhow::Error;
 #[cfg(johnny)]
 use poise::serenity_prelude::{ChannelId, EmojiId, ReactionType};
 #[cfg(db)]
 use poise::serenity_prelude::{GuildId, UserId};
 use poise::serenity_prelude::{Member, User};
+use preludes::eyre::*;
 #[cfg(johnny)]
 use rand::Rng;
 #[cfg(db)]
