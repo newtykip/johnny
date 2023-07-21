@@ -71,7 +71,7 @@ pub fn controls(key_code: &KeyCode, app: &mut App, state: &mut State, log_state:
 // todo: allow logs to be dumped to a file
 // todo: allow for invite generation
 
-pub fn draw<B: Backend>(f: &mut Frame<B>, app: &App, state: &State) {
+pub fn draw<B: Backend>(f: &mut Frame<B>, app: &App, state: &State) -> Result<()> {
     // split the screen into two vertical portions
     let chunks = Layout::default()
         .direction(Direction::Vertical)
@@ -126,4 +126,6 @@ pub fn draw<B: Backend>(f: &mut Frame<B>, app: &App, state: &State) {
     let controls = generate_controls(&controls);
 
     f.render_widget(controls, chunks[1]);
+
+    Ok(())
 }

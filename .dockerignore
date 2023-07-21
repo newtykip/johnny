@@ -1,0 +1,11 @@
+build-release.sh
+.pre-commit-config.yaml
+code_of_conduct.md
+config.toml.example
+license.md
+.env.example
+run.sh
+test.sqlite
+.gitignore
+.vscode
+.github

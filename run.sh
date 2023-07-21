@@ -15,4 +15,4 @@ do
 	fi
 done
 
-cargo r --features development$features
+cargo r --features dev$features

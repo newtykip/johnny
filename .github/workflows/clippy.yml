@@ -1,6 +1,13 @@
 name: Clippy
-on: [push, pull_request]
 permissions: write-all
+
+on:
+  push:
+    paths:
+      - '**.rs'
+  pull_request:
+    paths:
+      - '**.rs'
 
 jobs:
   clippy:

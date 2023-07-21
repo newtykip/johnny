@@ -47,7 +47,7 @@ async fn fetch_image(
 
 /// Overlay a pride flag on an image
 #[command(slash_command)]
-pub async fn overlay(
+async fn overlay(
     ctx: Context<'_>,
     #[description = "The flag to use"]
     #[autocomplete = "flag_autocomplete"]
@@ -86,7 +86,7 @@ pub async fn overlay(
 
 /// Draw a circle with the colours of a pride flag around an image
 #[command(slash_command)]
-pub async fn circle(
+async fn circle(
     ctx: Context<'_>,
     #[description = "The flag to use"]
     #[autocomplete = "flag_autocomplete"]

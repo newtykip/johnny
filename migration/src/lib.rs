@@ -1,17 +1,11 @@
-use once_cell::sync::Lazy;
+pub use helpers::TABLES;
 pub use sea_orm_migration::prelude::*;
 
-mod m20230711_163234_guild;
-mod m20230711_173402_user;
-mod m20230712_192057_autorole;
-
-pub static TABLES: Lazy<Vec<TableCreateStatement>> = Lazy::new(|| {
-    vec![
-        m20230711_163234_guild::TABLE.clone(),
-        m20230711_173402_user::TABLE.clone(),
-        m20230712_192057_autorole::TABLE.clone(),
-    ]
-});
+mod helpers;
+pub mod m20230711_163234_guild;
+pub mod m20230711_173402_user;
+pub mod m20230712_192057_autorole;
+pub mod m20230716_231443_member;
 
 pub struct Migrator;
 
@@ -22,6 +16,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20230711_163234_guild::Migration),
             Box::new(m20230711_173402_user::Migration),
             Box::new(m20230712_192057_autorole::Migration),
+            Box::new(m20230716_231443_member::Migration),
         ]
     }
 }
