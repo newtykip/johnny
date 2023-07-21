@@ -68,10 +68,13 @@ opt-level = 0
 
 [profile.release]
 opt-level = 3
+strip = true
+lto = true
+codegen-units = 1
+
+[package.metadata.cross.target.aarch64-unknown-linux-gnu]
+dockerfile = "./docker/Dockerfile.aarch64"
 
 [package.metadata.cargo-all-features]
-
-# we choose a database driver explicitly to prevent any forced compile errors
-# if you want to use a different database driver, you can enable it here
 always_include_features = ["sqlite"]
 denylist = ["postgres", "mysql"]

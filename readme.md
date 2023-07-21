@@ -82,6 +82,9 @@ tere are some neat things we'd like to have done within the near future.
 - web dashboard (I dread this, if someone would like to help give me a shout :])
 - come up for a new name for this thing or rename the **johnny** flag to avoid potential confusion
 - image server for animal commands (and so that i can stop depending on imgur for the johnny photos and allow for easy image submission!)
+- genai-like feature using markov chains
+- communicate with llama2?
+- dockerise?
 
 and much much more (:
 
