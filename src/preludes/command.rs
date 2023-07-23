@@ -1,10 +1,12 @@
 pub use super::general::*;
 #[cfg(autorole)]
 pub use crate::db::AutoroleDB;
+#[cfg(db)]
 pub use crate::db::GetDB;
 pub use crate::{embed::*, message_embed, Context};
 pub use poise::command;
 pub use poise::AutocompleteChoice;
+#[cfg(db)]
 pub use sea_orm::ActiveValue::*;
 pub use serenity::model::{
     application::{component::*, interaction::InteractionResponseType},

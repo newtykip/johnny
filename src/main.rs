@@ -1,11 +1,9 @@
-mod build_data;
 mod commands;
 mod config;
 mod events;
 #[cfg(tui)]
 mod tui;
 
-use build_data::FEATURES;
 use config::Config;
 use events::event_handler;
 #[cfg(johnny)]
@@ -16,7 +14,7 @@ use johnny::db::GetDB;
 use johnny::JOHNNY_GALLERY_IDS;
 use johnny::{
     embed::{colours, generate_embed, set_guild_thumbnail},
-    logger::{Logger, Style},
+    logger::SENDER,
     message_embed,
     preludes::general::*,
     Data,
@@ -140,26 +138,6 @@ async fn main() -> Result<()> {
         container
     };
 
-    // create logger
-    cfg_if! {
-        if #[cfg(tui)] {
-            let (log_tx, log_rx) = mpsc::channel(32);
-            let logger = Logger::new(log_tx);
-        } else {
-            let logger = Logger::new();
-        }
-    }
-
-    // list enabled features
-    if !FEATURES.is_empty() {
-        logger
-            .info(
-                vec![(format!("Enabled features: {}", FEATURES.join(", ")), None)],
-                None,
-            )
-            .await?;
-    }
-
     #[cfg(johnny)]
     let johnny_images = {
         let client = ImgurClient::new(&config.johnny.imgur);
@@ -195,9 +173,9 @@ async fn main() -> Result<()> {
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
             commands,
-            event_handler: |ctx, event, _framework, data| {
+            event_handler: |ctx, event, _framework, _data| {
                 Box::pin(async move {
-                    event_handler(event, ctx, data).await?;
+                    event_handler(event, ctx).await?;
                     Ok(())
                 })
             },
@@ -274,23 +252,17 @@ async fn main() -> Result<()> {
                             panic!("Failed to start bot: {:?}", error)
                         }
                         FrameworkError::Command { error, ctx } => {
-                            let data = ctx.data();
-
                             // log the error
-                            data.logger
-                                .error(
-                                    vec![
-                                        ("Error in command ".into(), None),
-                                        (
-                                            ctx.command().qualified_name.clone(),
-                                            Some(Style::default().bold()),
-                                        ),
-                                        (format!(": {}", error), None),
-                                    ],
-                                    Some(&ctx),
-                                )
-                                .await
-                                .unwrap();
+                            logger::error(
+                                components![
+                                    "Error in command " => Bold,
+                                    ctx.command().qualified_name.clone() => Bold,
+                                    format!(": {}", error) => None
+                                ],
+                                Some(&ctx),
+                            )
+                            .await
+                            .unwrap();
 
                             // create the embed
                             let mut base_embed = generate_embed(
@@ -303,9 +275,7 @@ async fn main() -> Result<()> {
                                 set_guild_thumbnail(&mut base_embed, guild);
                             }
 
-                            base_embed
-                                .title("Error!")
-                                .description(error);
+                            base_embed.title("Error!").description(error);
 
                             // announce the error
                             ctx.send(|msg| msg.embed(|embed| message_embed!(embed, base_embed)))
@@ -321,9 +291,7 @@ async fn main() -> Result<()> {
                 })
             },
             #[cfg(verbose)]
-            post_command: |ctx| {
-                Box::pin(async move { ctx.data().logger.command(&ctx).await.unwrap() })
-            },
+            post_command: |ctx| Box::pin(async move { logger::command(&ctx).await.unwrap() }),
             ..Default::default()
         })
         .token(config.token)
@@ -335,7 +303,6 @@ async fn main() -> Result<()> {
                 Ok(Data {
                     #[cfg(johnny)]
                     johnny_images,
-                    logger,
                     #[cfg(db)]
                     db,
                     #[cfg(db)]
@@ -353,13 +320,20 @@ async fn main() -> Result<()> {
     // spawn bot
     cfg_if! {
         if #[cfg(tui)] {
+            // start the bot
             tokio::spawn(async move { start_bot(framework.clone()).await.unwrap() });
-            tui::prelude(log_rx)?;
+
+            // start the tui
+            let channels = mpsc::channel(100);
+            SENDER.get_or_init(|| async { channels.0 }).await;
+
+            tui::prelude(channels.1)?;
         } else {
             start_bot(framework).await?;
             loop {}
         }
     }
+
     #[allow(unreachable_code)]
     Ok(())
 }

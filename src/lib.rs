@@ -1,3 +1,4 @@
+pub mod build_data;
 #[cfg(db)]
 pub mod db;
 pub mod embed;
@@ -5,7 +6,6 @@ pub mod logger;
 mod macros;
 pub mod preludes;
 
-use logger::Logger;
 #[cfg(johnny)]
 use poise::serenity_prelude::{ChannelId, EmojiId, ReactionType};
 #[cfg(db)]
@@ -25,7 +25,6 @@ pub struct Data {
     pub johnny_images: Vec<String>,
     #[cfg(db)]
     pub db: DatabaseConnection,
-    pub logger: Logger,
     #[cfg(db)]
     pub guilds_in_db: RwLock<HashSet<GuildId>>,
     #[cfg(db)]
