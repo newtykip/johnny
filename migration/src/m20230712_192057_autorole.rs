@@ -16,7 +16,15 @@ create_migration!(
                 .on_delete(ForeignKeyAction::Cascade),
         )
         // role snowflake
-        .col(ColumnDef::new(Autorole::RoleId).text().not_null()),
+        .col(ColumnDef::new(Autorole::RoleId).text().not_null())
+        // guild and role id must both be unique
+        .index(
+            Index::create()
+                .name("autorole_guild_id_role_id_idx")
+                .col(Autorole::GuildId)
+                .col(Autorole::RoleId)
+                .unique()
+        ),
     GuildId,
     RoleId,
 );

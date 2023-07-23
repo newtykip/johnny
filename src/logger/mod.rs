@@ -3,7 +3,7 @@ mod entry;
 mod level;
 mod style;
 
-use crate::{preludes::eyre::*, Context};
+use crate::{preludes::general::*, Context};
 use chrono::Local;
 pub use entry::Entry;
 use entry::Message;
@@ -11,16 +11,39 @@ pub use level::LogLevel;
 pub use style::Style;
 use tokio::sync::mpsc;
 
+macro_rules! log_level {
+    ($($name: ident => $level: ident)*) => {
+        $(
+            pub async fn $name(&self, message: Message, mut ctx: Option<&Context<'_>>) -> Result<()> {
+                if cfg!(not(tui)) {
+                    ctx = None;
+                }
+
+                self.log(LogLevel::$level, message, ctx).await
+            }
+        )*
+    }
+}
+
 pub type Sender = mpsc::Sender<Entry>;
 pub type Reciever = mpsc::Receiver<Entry>;
 
 pub struct Logger {
-    sender: Option<Sender>,
+    #[cfg(tui)]
+    sender: Sender,
 }
 
 impl Logger {
-    pub fn new(sender: Option<Sender>) -> Self {
-        Self { sender }
+    cfg_if! {
+        if #[cfg(tui)] {
+            pub fn new(sender: Sender) -> Self {
+                Self { sender }
+            }
+        } else {
+            pub fn new() -> Self {
+                Self { }
+            }
+        }
     }
 
     async fn log(
@@ -29,6 +52,7 @@ impl Logger {
         message: Message,
         #[allow(unused_variables)] ctx: Option<&Context<'_>>,
     ) -> Result<()> {
+        // todo: reimplement
         // // colour code booleans
         // #[cfg(tui)]
         // let message = message
@@ -57,35 +81,25 @@ impl Logger {
             channel: ctx.map(|ctx| ctx.channel_id()),
         };
 
-        #[cfg(tui)]
-        self.sender
-            .as_ref()
-            .wrap_err("sender should exist if tui is enabled")?
-            .send(entry)
-            .await
-            .wrap_err("should have been able to send log entry through channel to tui")?;
-
-        #[cfg(not(tui))]
-        println!("{}", entry.to_string());
+        cfg_if! {
+            if #[cfg(tui)] {
+                self.sender
+                    .send(entry)
+                    .await
+                    .wrap_err("should have been able to send log entry through channel to tui")?;
+            } else {
+                println!("{}", entry.to_string());
+            }
+        }
 
         Ok(())
     }
 
-    pub async fn info(&self, message: Message, mut ctx: Option<&Context<'_>>) -> Result<()> {
-        if cfg!(not(tui)) {
-            ctx = None;
-        }
-
-        self.log(LogLevel::Info, message, ctx).await
-    }
-
-    pub async fn warn(&self, message: Message, mut ctx: Option<&Context<'_>>) -> Result<()> {
-        if cfg!(not(tui)) {
-            ctx = None;
-        }
-
-        self.log(LogLevel::Warn, message, ctx).await
-    }
+    log_level!(
+        info => Info
+        warn => Warn
+        error => Error
+    );
 
     pub async fn command(&self, ctx: &Context<'_>) -> Result<()> {
         let author = ctx.author().name.clone();

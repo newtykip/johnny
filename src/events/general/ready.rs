@@ -3,7 +3,7 @@ use johnny::{logger::Style, preludes::event::*};
 use poise::serenity_prelude::Activity;
 use poise::serenity_prelude::Ready;
 
-pub async fn run(
+pub async fn ready(
     #[cfg(any(johnny, sqlite))] ctx: &Context,
     ready: &Ready,
     data: &Data,

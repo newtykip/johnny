@@ -1,7 +1,12 @@
-#[cfg(not(tui))]
-use owo_colors::{OwoColorize, Style as OwoStyle};
-#[cfg(tui)]
-use ratatui::style::{Color as RatColour, Modifier as RatModifier, Style as RatStyle};
+use crate::preludes::general::*;
+
+cfg_if! {
+    if #[cfg(tui)] {
+        use ratatui::style::{Color as RatColour, Modifier as RatModifier, Style as RatStyle};
+    } else {
+        use owo_colors::{Style as OwoStyle};
+    }
+}
 
 #[derive(Debug, Clone, Copy)]
 pub enum Colour {
@@ -36,46 +41,48 @@ impl Style {
     }
 }
 
-#[cfg(not(tui))]
-impl Into<OwoStyle> for Style {
-    fn into(self) -> OwoStyle {
-        let mut style = OwoStyle::default();
+cfg_if! {
+    if #[cfg(tui)] {
+        impl Into<RatStyle> for Style {
+            fn into(self) -> RatStyle {
+                let mut style = RatStyle::default();
 
-        // apply colour
-        if let Some(colour) = self.colour {
-            match colour {
-                Colour::Red => style = style.red(),
-                Colour::Cyan => style = style.cyan(),
+                // apply colour
+                if let Some(colour) = self.colour {
+                    style = style.fg(match colour {
+                        Colour::Red => RatColour::Red,
+                        Colour::Cyan => RatColour::Cyan,
+                    });
+                }
+
+                // apply bold
+                if self.bold {
+                    style = style.add_modifier(RatModifier::BOLD);
+                }
+
+                style
             }
         }
+    } else {
+        impl Into<OwoStyle> for Style {
+            fn into(self) -> OwoStyle {
+                let mut style = OwoStyle::default();
 
-        // apply bold
-        if self.bold {
-            style = style.bold();
+                // apply colour
+                if let Some(colour) = self.colour {
+                    match colour {
+                        Colour::Red => style = style.red(),
+                        Colour::Cyan => style = style.cyan(),
+                    }
+                }
+
+                // apply bold
+                if self.bold {
+                    style = style.bold();
+                }
+
+                style
+            }
         }
-
-        style
-    }
-}
-
-#[cfg(tui)]
-impl Into<RatStyle> for Style {
-    fn into(self) -> RatStyle {
-        let mut style = RatStyle::default();
-
-        // apply colour
-        if let Some(colour) = self.colour {
-            style = style.fg(match colour {
-                Colour::Red => RatColour::Red,
-                Colour::Cyan => RatColour::Cyan,
-            });
-        }
-
-        // apply bold
-        if self.bold {
-            style = style.add_modifier(RatModifier::BOLD);
-        }
-
-        style
     }
 }

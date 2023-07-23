@@ -24,6 +24,14 @@ create_migration!(
                 .to_tbl(User::Table)
                 .to_col(User::Id)
                 .on_delete(ForeignKeyAction::Cascade)
+        )
+        // guild and user id must both be unique
+        .index(
+            Index::create()
+                .name("member_guild_id_user_id_idx")
+                .col(Member::GuildId)
+                .col(Member::UserId)
+                .unique()
         ),
     GuildId,
     UserId,

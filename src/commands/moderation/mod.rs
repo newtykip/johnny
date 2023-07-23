@@ -1,3 +1,3 @@
 use johnny::load_command;
 
-load_command!(autorole, autorole);
+load_command!(autorole | autorole);

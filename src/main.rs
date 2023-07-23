@@ -14,10 +14,16 @@ use imgurs::ImgurClient;
 use johnny::db::GetDB;
 #[cfg(johnny)]
 use johnny::JOHNNY_GALLERY_IDS;
-use johnny::{logger::Logger, preludes::eyre::*, Data};
+use johnny::{
+    embed::{colours, generate_embed, set_guild_thumbnail},
+    logger::{Logger, Style},
+    message_embed,
+    preludes::general::*,
+    Data,
+};
 #[cfg(db)]
 use migration::{Migrator, MigratorTrait};
-use poise::{serenity_prelude as serenity, Command, Framework};
+use poise::{serenity_prelude as serenity, Command, Framework, FrameworkError};
 #[cfg(db)]
 use sea_orm::Database;
 use std::sync::Arc;
@@ -70,7 +76,6 @@ async fn main() -> Result<()> {
         }
     }
 
-    // todo: pretty error if this does not work
     // connect to the database
     #[cfg(db)]
     let db = Database::connect(config.database.url).await?;
@@ -136,12 +141,14 @@ async fn main() -> Result<()> {
     };
 
     // create logger
-    #[cfg(tui)]
-    let (log_tx, log_rx) = mpsc::channel(32);
-    #[cfg(tui)]
-    let logger = Logger::new(Some(log_tx));
-    #[cfg(not(tui))]
-    let logger = Logger::new(None);
+    cfg_if! {
+        if #[cfg(tui)] {
+            let (log_tx, log_rx) = mpsc::channel(32);
+            let logger = Logger::new(log_tx);
+        } else {
+            let logger = Logger::new();
+        }
+    }
 
     // list enabled features
     if !FEATURES.is_empty() {
@@ -183,9 +190,6 @@ async fn main() -> Result<()> {
 
     #[cfg(pride)]
     commands.push(commands::pride());
-
-    #[cfg(animals)]
-    commands.push(commands::animal());
 
     // create the bot's framework instance
     let framework = poise::Framework::builder()
@@ -263,6 +267,59 @@ async fn main() -> Result<()> {
                     ()
                 })
             },
+            on_error: |error| {
+                Box::pin(async move {
+                    match error {
+                        FrameworkError::Setup { error, .. } => {
+                            panic!("Failed to start bot: {:?}", error)
+                        }
+                        FrameworkError::Command { error, ctx } => {
+                            let data = ctx.data();
+
+                            // log the error
+                            data.logger
+                                .error(
+                                    vec![
+                                        ("Error in command ".into(), None),
+                                        (
+                                            ctx.command().qualified_name.clone(),
+                                            Some(Style::default().bold()),
+                                        ),
+                                        (format!(": {}", error), None),
+                                    ],
+                                    Some(&ctx),
+                                )
+                                .await
+                                .unwrap();
+
+                            // create the embed
+                            let mut base_embed = generate_embed(
+                                ctx.author(),
+                                ctx.author_member().await,
+                                Some(colours::FAILURE),
+                            );
+
+                            if let Some(guild) = ctx.guild() {
+                                set_guild_thumbnail(&mut base_embed, guild);
+                            }
+
+                            base_embed
+                                .title("Error!")
+                                .description(error);
+
+                            // announce the error
+                            ctx.send(|msg| msg.embed(|embed| message_embed!(embed, base_embed)))
+                                .await
+                                .unwrap();
+                        }
+                        error => {
+                            if let Err(e) = poise::builtins::on_error(error).await {
+                                panic!("Error while handling error: {:?}", e);
+                            }
+                        }
+                    }
+                })
+            },
             #[cfg(verbose)]
             post_command: |ctx| {
                 Box::pin(async move { ctx.data().logger.command(&ctx).await.unwrap() })
@@ -294,20 +351,15 @@ async fn main() -> Result<()> {
         .await?;
 
     // spawn bot
-    #[cfg(tui)]
-    tokio::spawn(async move { start_bot(framework).await.unwrap() });
-
-    #[cfg(not(tui))]
-    start_bot(framework).await?;
-
-    // setup terminal if tui feature is enabled
-    #[cfg(tui)]
-    tui::prelude(log_rx)?;
-
-    // otherwise block the thread
-    #[cfg(not(tui))]
-    loop {}
-
+    cfg_if! {
+        if #[cfg(tui)] {
+            tokio::spawn(async move { start_bot(framework.clone()).await.unwrap() });
+            tui::prelude(log_rx)?;
+        } else {
+            start_bot(framework).await?;
+            loop {}
+        }
+    }
     #[allow(unreachable_code)]
     Ok(())
 }

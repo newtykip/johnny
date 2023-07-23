@@ -35,6 +35,7 @@ dev = ["dep:dotenvy_macro"] # never enable this in production
 
 [dependencies]
 async-trait = { version = "0.1.71", optional = true }
+cfg-if = "1.0.0"
 chrono = "0.4.26"
 color-eyre = "0.6.2"
 crossterm = { version = "0.26.1", optional = true }

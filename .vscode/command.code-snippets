@@ -1,0 +1,16 @@
+{
+	"generate": {
+		"description": "Generate a command function",
+		"scope": "rust",
+		"prefix": "cmd",
+		"body": [
+			"use johnny::preludes::command::*;",
+			"",
+			"/// $3",
+			"#[command(slash_command, category = \"$2\")]",
+			"pub async fn $1(ctx: Context<'_>) -> Result<()> {",
+			"    Ok(())",
+			"}"
+		]
+	}
+}

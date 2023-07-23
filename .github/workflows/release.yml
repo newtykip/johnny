@@ -10,45 +10,45 @@ jobs:
       matrix:
         # the database driver to compile with
         db: [
-          # postgres,
-          # mysql,
+          postgres,
+          mysql,
           sqlite
         ]
         # the feature combinations to compile - should be all combinations of modules
         features: [
-          # [moderation], [image],
+          [moderation], [image],
           [moderation, image]
         ]
         # whether the tui feature flag should be enabled or not
         tui: [
           true,
-          # false
+          false
         ]
         platform:
           # x86_64
-          # - os_name: linux-x86_64
-          #   os: ubuntu-latest
-          #   target: x86_64-unknown-linux-gnu
-          #   bin: johnny
-          #   name: johnny-linux-x86_64-gnu.tar.gz
-          #   cross: false
-          #   cargo_command: cargo
+          - os_name: linux-x86_64
+            os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            bin: johnny
+            name: johnny-linux-x86_64-gnu.tar.gz
+            cross: false
+            cargo_command: cargo
 
-          # - os_name: windows-x86_64
-          #   os: windows-latest
-          #   target: x86_64-pc-windows-msvc
-          #   bin: johnny.exe
-          #   name: johnny-windows-x86_64.zip
-          #   cross: false
-          #   cargo_command: cargo
+          - os_name: windows-x86_64
+            os: windows-latest
+            target: x86_64-pc-windows-msvc
+            bin: johnny.exe
+            name: johnny-windows-x86_64.zip
+            cross: false
+            cargo_command: cargo
 
-          # - os_name: macos-x86_64
-          #   os: macos-latest
-          #   target: x86_64-apple-darwin
-          #   bin: johnny
-          #   name: johnny-darwin-x86_64.tar.gz
-          #   cross: false
-          #   cargo_command: cargo
+          - os_name: macos-x86_64
+            os: macos-latest
+            target: x86_64-apple-darwin
+            bin: johnny
+            name: johnny-darwin-x86_64.tar.gz
+            cross: false
+            cargo_command: cargo
 
           # arm64
           - os_name: linux-aarch64

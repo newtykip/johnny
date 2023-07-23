@@ -1,5 +1,7 @@
 {
 	"recommendations": [
-		"rust-lang.rust-analyzer"
+		"rust-lang.rust-analyzer",
+		"github.vscode-github-actions",
+		"aaron-bond.better-comments"
 	]
 }

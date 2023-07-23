@@ -1,6 +1,6 @@
 #[cfg(johnny)]
 use ::johnny::SUGGESTIONS_ID;
-use ::johnny::{preludes::eyre::*, Data};
+use ::johnny::{preludes::general::*, Data};
 use poise::Event;
 use serenity::client::Context;
 
@@ -16,10 +16,13 @@ pub async fn event_handler(
     match event {
         // ready
         Event::Ready { data_about_bot } => {
-            #[cfg(any(johnny, sqlite))]
-            return general::ready(ctx, data_about_bot, data).await;
-            #[cfg(not(any(johnny, sqlite)))]
-            general::ready(data_about_bot, data).await
+            cfg_if! {
+                if #[cfg(any(johnny, sqlite))] {
+                    general::ready(ctx, data_about_bot, data).await
+                } else {
+                    general::ready(data_about_bot, data).await
+                }
+            }
         }
 
         // thread create

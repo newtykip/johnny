@@ -1,81 +1,81 @@
-use super::entity::user::{ActiveModel, Entity, Model};
-use super::GetDB;
-use crate::preludes::eyre::*;
+use super::{
+    create_db, delete_db,
+    entity::user::{ActiveModel, Entity, Model},
+    get_db, get_db_all, update_db, GetDB,
+};
+use crate::preludes::general::*;
 use async_trait::async_trait;
 use poise::serenity_prelude::{User, UserId};
-use sea_orm::{ActiveValue::*, DatabaseConnection, EntityTrait, InsertResult, ModelTrait};
+use sea_orm::{ActiveValue::*, DatabaseConnection, DeleteResult, InsertResult};
 
-async fn get_db_all(db: &DatabaseConnection) -> Result<Vec<Model>> {
-    Entity::find()
-        .all(db)
-        .await
-        .wrap_err("failed to fetch all users from db")
-}
-
-async fn get_db(db: &DatabaseConnection, id: &UserId) -> Result<Option<Model>> {
-    Entity::find_by_id(id.to_string())
-        .one(db)
-        .await
-        .wrap_err(format!("failed to fetch user with id {} from db", id))
-}
-
-async fn create_db(db: &DatabaseConnection, id: &UserId) -> Result<InsertResult<ActiveModel>> {
-    let model = ActiveModel {
-        id: Set(id.to_string()),
-        ..Default::default()
-    };
-
-    Entity::insert(model)
-        .exec(db)
-        .await
-        .wrap_err(format!("failed to insert user with id {} into db", id))
-}
-
-async fn delete_db(db: &DatabaseConnection, id: &UserId) -> Result<()> {
-    if let Some(model) = get_db(db, id).await? {
-        model
-            .delete(db)
-            .await
-            .wrap_err(format!("failed to delete user with id {} from db", id))?;
-    }
-
-    Ok(())
-}
+const ITEM: &str = "user";
 
 #[async_trait]
-impl GetDB<Model, ActiveModel> for User {
+impl GetDB<ActiveModel> for User {
+    async fn create_db(&self, db: &DatabaseConnection) -> Result<InsertResult<ActiveModel>> {
+        create_db(
+            db,
+            ITEM,
+            &self.id.to_string(),
+            ActiveModel {
+                id: Set(self.id.to_string()),
+                ..Default::default()
+            },
+        )
+        .await
+    }
+
     async fn get_db_all(db: &DatabaseConnection) -> Result<Vec<Model>> {
-        get_db_all(db).await
+        get_db_all::<Entity>(db, ITEM).await
     }
 
     async fn get_db(&self, db: &DatabaseConnection) -> Result<Option<Model>> {
-        get_db(db, &self.id).await
+        get_db::<Entity, String>(db, ITEM, &self.id.to_string()).await
     }
 
-    async fn create_db(&self, db: &DatabaseConnection) -> Result<InsertResult<ActiveModel>> {
-        create_db(db, &self.id).await
+    async fn update_db<F>(&self, db: &DatabaseConnection, modify: F) -> Result<Option<Model>>
+    where
+        F: Send + FnOnce(&mut ActiveModel) -> &mut ActiveModel,
+    {
+        update_db::<ActiveModel, String, F>(db, ITEM, &self.id.to_string(), modify).await
     }
 
-    async fn delete_db(&self, db: &DatabaseConnection) -> Result<()> {
-        delete_db(db, &self.id).await
+    async fn delete_db(&self, db: &DatabaseConnection) -> Result<Option<DeleteResult>> {
+        delete_db::<ActiveModel, String>(db, ITEM, &self.id.to_string()).await
     }
 }
 
 #[async_trait]
-impl GetDB<Model, ActiveModel> for UserId {
+impl GetDB<ActiveModel> for UserId {
+    async fn create_db(&self, db: &DatabaseConnection) -> Result<InsertResult<ActiveModel>> {
+        create_db(
+            db,
+            ITEM,
+            &self.to_string(),
+            ActiveModel {
+                id: Set(self.to_string()),
+                ..Default::default()
+            },
+        )
+        .await
+    }
+
     async fn get_db_all(db: &DatabaseConnection) -> Result<Vec<Model>> {
-        get_db_all(db).await
+        get_db_all::<Entity>(db, ITEM).await
     }
 
     async fn get_db(&self, db: &DatabaseConnection) -> Result<Option<Model>> {
-        get_db(db, self).await
+        get_db::<Entity, String>(db, ITEM, &self.to_string()).await
     }
 
-    async fn create_db(&self, db: &DatabaseConnection) -> Result<InsertResult<ActiveModel>> {
-        create_db(db, self).await
+    async fn update_db<F>(&self, db: &DatabaseConnection, modify: F) -> Result<Option<Model>>
+    where
+        F: Send + FnOnce(&mut ActiveModel) -> &mut ActiveModel,
+    {
+        update_db::<ActiveModel, String, F>(db, ITEM, &self.to_string(), modify).await
     }
 
-    async fn delete_db(&self, db: &DatabaseConnection) -> Result<()> {
-        delete_db(db, self).await
+    async fn delete_db(&self, db: &DatabaseConnection) -> Result<Option<DeleteResult>> {
+        delete_db::<ActiveModel, String>(db, ITEM, &self.to_string()).await
     }
 }

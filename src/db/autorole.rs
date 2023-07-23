@@ -1,5 +1,5 @@
 use super::entity::autorole::{ActiveModel, Entity};
-use crate::{preludes::eyre::*, EPOCH};
+use crate::{preludes::general::*, EPOCH};
 use async_trait::async_trait;
 use once_cell::sync::Lazy;
 use poise::serenity_prelude::{Role, RoleId};

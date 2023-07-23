@@ -1,6 +1,5 @@
 pub mod command;
 pub mod event;
-pub mod eyre;
-mod general;
+pub mod general;
 #[cfg(tui)]
 pub mod tui;

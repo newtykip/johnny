@@ -1,20 +1,21 @@
 #[cfg(db)]
 pub mod db;
+pub mod embed;
 pub mod logger;
 mod macros;
 pub mod preludes;
 
+use logger::Logger;
 #[cfg(johnny)]
 use poise::serenity_prelude::{ChannelId, EmojiId, ReactionType};
 #[cfg(db)]
 use poise::serenity_prelude::{GuildId, UserId};
 use poise::serenity_prelude::{Member, User};
-use preludes::eyre::*;
+use preludes::general::*;
 #[cfg(johnny)]
 use rand::Rng;
 #[cfg(db)]
 use sea_orm::DatabaseConnection;
-use serenity::{builder::CreateEmbed, utils::Colour};
 use std::borrow::Cow;
 #[cfg(db)]
 use std::{collections::HashSet, sync::RwLock};
@@ -24,7 +25,7 @@ pub struct Data {
     pub johnny_images: Vec<String>,
     #[cfg(db)]
     pub db: DatabaseConnection,
-    pub logger: logger::Logger,
+    pub logger: Logger,
     #[cfg(db)]
     pub guilds_in_db: RwLock<HashSet<GuildId>>,
     #[cfg(db)]
@@ -66,30 +67,11 @@ impl Default for Reactions {
     }
 }
 
-const EMBED_COLOUR: Colour = Colour::from_rgb(192, 238, 255);
-
 pub fn determine_avatar(user: &User, member: Option<Cow<'_, Member>>) -> String {
     member
         .and_then(|x| x.avatar_url())
         .or(user.avatar_url())
         .unwrap_or(user.default_avatar_url())
-}
-
-/// Generate the base of any embed
-pub fn generate_base_embed(user: &User, member: Option<Cow<'_, Member>>) -> CreateEmbed {
-    let mut embed = CreateEmbed::default();
-
-    let name = match &member {
-        Some(member) => member.display_name().to_string(),
-        None => user.name.clone(),
-    };
-
-    let avatar = determine_avatar(user, member);
-
-    embed
-        .author(|author| author.name(name).icon_url(avatar))
-        .color(EMBED_COLOUR)
-        .clone()
 }
 
 #[cfg(johnny)]
