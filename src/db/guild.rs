@@ -10,6 +10,13 @@ use sea_orm::{ActiveValue::*, DatabaseConnection, DeleteResult, InsertResult};
 
 const ITEM: &str = "guild";
 
+fn default_model(id: String) -> ActiveModel {
+    ActiveModel {
+        id: Set(id),
+        ..Default::default()
+    }
+}
+
 #[async_trait]
 impl GetDB<ActiveModel> for Guild {
     async fn create_db(&self, db: &DatabaseConnection) -> Result<InsertResult<ActiveModel>> {
@@ -17,10 +24,7 @@ impl GetDB<ActiveModel> for Guild {
             db,
             ITEM,
             &self.id.to_string(),
-            ActiveModel {
-                id: Set(self.id.to_string()),
-                ..Default::default()
-            },
+            default_model(self.id.to_string()),
         )
         .await
     }
@@ -30,14 +34,27 @@ impl GetDB<ActiveModel> for Guild {
     }
 
     async fn get_db(&self, db: &DatabaseConnection) -> Result<Option<Model>> {
-        get_db::<Entity, String>(db, ITEM, &self.id.to_string()).await
+        get_db::<ActiveModel, String>(
+            db,
+            ITEM,
+            &self.id.to_string(),
+            Some(default_model(self.id.to_string())),
+        )
+        .await
     }
 
     async fn update_db<F>(&self, db: &DatabaseConnection, modify: F) -> Result<Option<Model>>
     where
         F: Send + FnOnce(&mut ActiveModel) -> &mut ActiveModel,
     {
-        update_db::<ActiveModel, String, F>(db, ITEM, &self.id.to_string(), modify).await
+        update_db::<ActiveModel, String, F>(
+            db,
+            ITEM,
+            &self.id.to_string(),
+            default_model(self.id.to_string()),
+            modify,
+        )
+        .await
     }
 
     async fn delete_db(&self, db: &DatabaseConnection) -> Result<Option<DeleteResult>> {
@@ -48,16 +65,7 @@ impl GetDB<ActiveModel> for Guild {
 #[async_trait]
 impl GetDB<ActiveModel> for GuildId {
     async fn create_db(&self, db: &DatabaseConnection) -> Result<InsertResult<ActiveModel>> {
-        create_db(
-            db,
-            ITEM,
-            &self.to_string(),
-            ActiveModel {
-                id: Set(self.to_string()),
-                ..Default::default()
-            },
-        )
-        .await
+        create_db(db, ITEM, &self.to_string(), default_model(self.to_string())).await
     }
 
     async fn get_db_all(db: &DatabaseConnection) -> Result<Vec<Model>> {
@@ -65,14 +73,27 @@ impl GetDB<ActiveModel> for GuildId {
     }
 
     async fn get_db(&self, db: &DatabaseConnection) -> Result<Option<Model>> {
-        get_db::<Entity, String>(db, ITEM, &self.to_string()).await
+        get_db::<ActiveModel, String>(
+            db,
+            ITEM,
+            &self.to_string(),
+            Some(default_model(self.to_string())),
+        )
+        .await
     }
 
     async fn update_db<F>(&self, db: &DatabaseConnection, modify: F) -> Result<Option<Model>>
     where
         F: Send + FnOnce(&mut ActiveModel) -> &mut ActiveModel,
     {
-        update_db::<ActiveModel, String, F>(db, ITEM, &self.to_string(), modify).await
+        update_db::<ActiveModel, String, F>(
+            db,
+            ITEM,
+            &self.to_string(),
+            default_model(self.to_string()),
+            modify,
+        )
+        .await
     }
 
     async fn delete_db(&self, db: &DatabaseConnection) -> Result<Option<DeleteResult>> {

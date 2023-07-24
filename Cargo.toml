@@ -14,7 +14,7 @@ johnny = ["dep:imgurs", "dep:rand", "verbose", "sqlite", "pride"]
 verbose = []
 
 # database drivers
-db = ["dep:sea-orm", "dep:migration", "dep:async-trait", "dep:rust-format", "dep:sea-orm-codegen", "dep:rustflake", "dep:once_cell"]
+db = ["dep:sea-orm", "dep:migration", "dep:async-trait", "dep:rust-format", "dep:sea-orm-codegen", "dep:rustflake", "dep:once_cell", "dep:async-recursion"]
 
 postgres = ["db", "sea-orm?/sqlx-postgres"]
 mysql = ["db", "sea-orm?/sqlx-mysql"]
@@ -34,6 +34,7 @@ pride = ["dep:pride-overlay", "dep:reqwest", "dep:image", "dep:strum"]
 dev = ["dep:dotenvy_macro"] # never enable this in production
 
 [dependencies]
+async-recursion = { version = "1.0.4", optional = true }
 async-trait = { version = "0.1.71", optional = true }
 bitflags = "2.3.3"
 cfg-if = "1.0.0"

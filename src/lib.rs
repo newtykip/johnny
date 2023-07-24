@@ -8,8 +8,6 @@ pub mod preludes;
 
 #[cfg(johnny)]
 use poise::serenity_prelude::{ChannelId, EmojiId, ReactionType};
-#[cfg(db)]
-use poise::serenity_prelude::{GuildId, UserId};
 use poise::serenity_prelude::{Member, User};
 use preludes::general::*;
 #[cfg(johnny)]
@@ -17,20 +15,12 @@ use rand::Rng;
 #[cfg(db)]
 use sea_orm::DatabaseConnection;
 use std::borrow::Cow;
-#[cfg(db)]
-use std::{collections::HashSet, sync::RwLock};
 
 pub struct Data {
     #[cfg(johnny)]
     pub johnny_images: Vec<String>,
     #[cfg(db)]
     pub db: DatabaseConnection,
-    #[cfg(db)]
-    pub guilds_in_db: RwLock<HashSet<GuildId>>,
-    #[cfg(db)]
-    pub users_in_db: RwLock<HashSet<UserId>>,
-    #[cfg(db)]
-    pub members_in_db: RwLock<HashSet<(GuildId, UserId)>>,
 }
 
 pub type Context<'a> = poise::Context<'a, Data, Error>;

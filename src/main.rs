@@ -1,32 +1,24 @@
 mod commands;
 mod config;
+mod errors;
 mod events;
 #[cfg(tui)]
 mod tui;
 
 use config::Config;
+use errors::error_handler;
 use events::event_handler;
 #[cfg(johnny)]
 use imgurs::ImgurClient;
-#[cfg(db)]
-use johnny::db::GetDB;
 #[cfg(johnny)]
 use johnny::JOHNNY_GALLERY_IDS;
-use johnny::{
-    embed::{colours, generate_embed, set_guild_thumbnail},
-    logger::SENDER,
-    message_embed,
-    preludes::general::*,
-    Data,
-};
+use johnny::{logger::SENDER, preludes::general::*, Data};
 #[cfg(db)]
 use migration::{Migrator, MigratorTrait};
-use poise::{serenity_prelude as serenity, Command, Framework, FrameworkError};
+use poise::{serenity_prelude as serenity, Command, Framework};
 #[cfg(db)]
 use sea_orm::Database;
 use std::sync::Arc;
-#[cfg(db)]
-use std::{collections::HashSet, sync::RwLock};
 #[cfg(sqlite)]
 use std::{fs::File, path::Path};
 #[cfg(tui)]
@@ -82,62 +74,6 @@ async fn main() -> Result<()> {
     #[cfg(db)]
     Migrator::refresh(&db).await?;
 
-    // guild cache
-    #[cfg(db)]
-    let guilds_in_db = {
-        let mut container = HashSet::new();
-
-        for guild in serenity::Guild::get_db_all(&db).await? {
-            container.insert(serenity::GuildId(
-                guild
-                    .id
-                    .parse()
-                    .wrap_err("guild id should be a snowflake")?,
-            ));
-        }
-
-        container
-    };
-
-    // user cache
-    #[cfg(db)]
-    let users_in_db = {
-        let mut container = HashSet::new();
-
-        for user in serenity::User::get_db_all(&db).await? {
-            container.insert(serenity::UserId(
-                user.id.parse().wrap_err("user id should be a snowflake")?,
-            ));
-        }
-
-        container
-    };
-
-    // member cache
-    #[cfg(db)]
-    let members_in_db = {
-        let mut container = HashSet::new();
-
-        for member in serenity::Member::get_db_all(&db).await? {
-            container.insert((
-                serenity::GuildId(
-                    member
-                        .guild_id
-                        .parse()
-                        .wrap_err("guild id should be a snowflake")?,
-                ),
-                serenity::UserId(
-                    member
-                        .user_id
-                        .parse()
-                        .wrap_err("user id should be a snowflake")?,
-                ),
-            ));
-        }
-
-        container
-    };
-
     #[cfg(johnny)]
     let johnny_images = {
         let client = ImgurClient::new(&config.johnny.imgur);
@@ -179,115 +115,9 @@ async fn main() -> Result<()> {
                     Ok(())
                 })
             },
-            #[cfg(db)]
-            pre_command: |ctx| {
-                // todo: consider doing this stuff on join
-                Box::pin(async move {
-                    let data = ctx.data();
-
-                    // ensure that the guild has a document in the database
-                    if let Some(id) = ctx.guild_id() {
-                        let guild_cache = &data.guilds_in_db;
-
-                        if !guild_cache
-                            .read()
-                            .expect("should be readable")
-                            .contains(&id)
-                        {
-                            // ? log verbose?
-                            id.create_db(&data.db)
-                                .await
-                                .expect("db connection should be active");
-                            guild_cache.write().expect("should be writable").insert(id);
-                        }
-                    }
-
-                    // ensure that the user has a document in the database
-                    let user = ctx.author();
-                    let user_cache = &data.users_in_db;
-
-                    if !user_cache
-                        .read()
-                        .expect("should be readable")
-                        .contains(&user.id)
-                    {
-                        // ? log verbose?
-                        user.create_db(&data.db)
-                            .await
-                            .expect("db connection should be active");
-                        user_cache
-                            .write()
-                            .expect("should be writable")
-                            .insert(user.id);
-                    }
-
-                    // ensure that the member has a document in the database
-                    if let Some(member) = ctx.author_member().await {
-                        let member_cache = &data.members_in_db;
-
-                        if !member_cache
-                            .read()
-                            .expect("should be readable")
-                            .contains(&(member.guild_id, member.user.id))
-                        {
-                            // ? log verbose?
-                            member
-                                .create_db(&data.db)
-                                .await
-                                .expect("db connection should be active");
-                            member_cache
-                                .write()
-                                .expect("should be writable")
-                                .insert((member.guild_id, member.user.id));
-                        }
-                    }
-
-                    ()
-                })
-            },
             on_error: |error| {
                 Box::pin(async move {
-                    match error {
-                        FrameworkError::Setup { error, .. } => {
-                            panic!("Failed to start bot: {:?}", error)
-                        }
-                        FrameworkError::Command { error, ctx } => {
-                            // log the error
-                            logger::error(
-                                components![
-                                    "Error in command " => Bold,
-                                    ctx.command().qualified_name.clone() => Bold,
-                                    format!(": {}", error) => None
-                                ],
-                                Some(&ctx),
-                            )
-                            .await
-                            .unwrap();
-
-                            // create the embed
-                            let mut base_embed = generate_embed(
-                                ctx.author(),
-                                ctx.author_member().await,
-                                Some(colours::FAILURE),
-                            );
-
-                            if let Some(guild) = ctx.guild() {
-                                set_guild_thumbnail(&mut base_embed, guild);
-                            }
-
-                            base_embed.title("Error!").description(error);
-
-                            // announce the error
-                            ctx.send(|msg| msg.embed(|embed| message_embed!(embed, base_embed)))
-                                .await
-                                .unwrap();
-                        }
-                        error => {
-                            if let Err(e) = poise::builtins::on_error(error).await {
-                                panic!("Error while handling error: {:?}", e);
-                            }
-                        }
-                    }
+                    error_handler(error).await;
                 })
             },
             #[cfg(verbose)]
@@ -305,12 +135,6 @@ async fn main() -> Result<()> {
                     johnny_images,
                     #[cfg(db)]
                     db,
-                    #[cfg(db)]
-                    guilds_in_db: RwLock::new(guilds_in_db),
-                    #[cfg(db)]
-                    users_in_db: RwLock::new(users_in_db),
-                    #[cfg(db)]
-                    members_in_db: RwLock::new(members_in_db),
                 })
             })
         })

@@ -16,6 +16,15 @@ use sea_orm::{
 static mut SNOWFLAKE_GENERATOR: Lazy<Snowflake> = Lazy::new(|| Snowflake::new(EPOCH, 2, 1));
 const ITEM: &str = "member";
 
+fn default_model(id: String, user_id: String, guild_id: String) -> ActiveModel {
+    ActiveModel {
+        id: Set(id),
+        user_id: Set(user_id),
+        guild_id: Set(guild_id),
+        ..Default::default()
+    }
+}
+
 #[async_trait]
 impl GetDB<ActiveModel> for Member {
     async fn create_db(&self, db: &DatabaseConnection) -> Result<InsertResult<ActiveModel>> {
@@ -25,12 +34,11 @@ impl GetDB<ActiveModel> for Member {
             db,
             ITEM,
             &id,
-            ActiveModel {
-                id: Set(id.clone()),
-                user_id: Set(self.user.id.to_string()),
-                guild_id: Set(self.guild_id.to_string()),
-                ..Default::default()
-            },
+            default_model(
+                id.clone(),
+                self.user.id.to_string(),
+                self.guild_id.to_string(),
+            ),
         )
         .await
     }
@@ -43,7 +51,7 @@ impl GetDB<ActiveModel> for Member {
         let user_id = self.user.id;
         let guild_id = self.guild_id;
 
-        Entity::find()
+        if let Some(model) = Entity::find()
             .filter(Column::UserId.eq(user_id.to_string()))
             .filter(Column::GuildId.eq(guild_id.to_string()))
             .one(db)
@@ -53,7 +61,13 @@ impl GetDB<ActiveModel> for Member {
                     "failed to fetch member with user id {}, guild id {} from db",
                     user_id, guild_id
                 )
-            })
+            })?
+        {
+            Ok(Some(model))
+        } else {
+            self.create_db(db).await?;
+            self.get_db(db).await
+        }
     }
 
     async fn update_db<F>(&self, db: &DatabaseConnection, modify: F) -> Result<Option<Model>>

@@ -8,6 +8,7 @@ mod member;
 mod user;
 
 use crate::preludes::general::*;
+use async_recursion::async_recursion;
 use async_trait::async_trait;
 #[cfg(autorole)]
 pub use autorole::AutoroleDB;
@@ -35,15 +36,35 @@ where
 }
 
 // r
-async fn get_db<E, I>(db: &DatabaseConnection, item: &str, id: &I) -> Result<Option<E::Model>>
+#[async_recursion]
+async fn get_db<A, I>(
+    db: &DatabaseConnection,
+    item: &str,
+    id: &I,
+    model: Option<A>,
+) -> Result<Option<<A::Entity as EntityTrait>::Model>>
 where
-    E: EntityTrait,
-    I: Into<<E::PrimaryKey as PrimaryKeyTrait>::ValueType> + Display + Clone,
+    A: ActiveModelTrait + Clone + Send + Sync,
+    I: Into<<<A::Entity as EntityTrait>::PrimaryKey as PrimaryKeyTrait>::ValueType>
+        + Display
+        + Clone
+        + Sync
+        + Send,
 {
-    E::find_by_id::<I>(id.clone())
+    if let Some(model) = A::Entity::find_by_id::<I>(id.clone())
         .one(db)
         .await
-        .wrap_err(format!("failed to fetch {item} swith id {id} from db"))
+        .wrap_err(format!("failed to fetch {item} swith id {id} from db"))?
+    {
+        Ok(Some(model))
+    } else {
+        if let Some(model) = model {
+            create_db(db, item, id, model.clone()).await?;
+            get_db(db, item, id, Some(model)).await
+        } else {
+            Ok(None)
+        }
+    }
 }
 
 async fn get_db_all<E>(db: &DatabaseConnection, item: &str) -> Result<Vec<E::Model>>
@@ -61,18 +82,21 @@ async fn update_db<A, I, F>(
     db: &DatabaseConnection,
     item: &str,
     id: &I,
+    model: A,
     modify: F,
 ) -> Result<Option<<A::Entity as EntityTrait>::Model>>
 where
-    A: ActiveModelTrait + ActiveModelBehavior + Send,
+    A: ActiveModelTrait + ActiveModelBehavior + Send + Sync,
     I: Into<<<A::Entity as EntityTrait>::PrimaryKey as PrimaryKeyTrait>::ValueType>
         + Display
-        + Clone,
+        + Clone
+        + Sync
+        + Send,
     F: Send + FnOnce(&mut A) -> &mut A,
     <<A as sea_orm::ActiveModelTrait>::Entity as sea_orm::EntityTrait>::Model: IntoActiveModel<A>,
 {
     Ok(
-        if let Some(model) = get_db::<A::Entity, I>(db, item, id).await? {
+        if let Some(model) = get_db::<A, I>(db, item, id, Some(model)).await? {
             Some(
                 modify(&mut model.into_active_model())
                     .clone()
@@ -93,14 +117,16 @@ async fn delete_db<A, I>(
     id: &I,
 ) -> Result<Option<DeleteResult>>
 where
-    A: ActiveModelTrait + ActiveModelBehavior + Send,
+    A: ActiveModelTrait + ActiveModelBehavior + Send + Sync,
     I: Into<<<A::Entity as EntityTrait>::PrimaryKey as PrimaryKeyTrait>::ValueType>
         + Display
-        + Clone,
+        + Clone
+        + Sync
+        + Send,
     <<A as sea_orm::ActiveModelTrait>::Entity as sea_orm::EntityTrait>::Model: IntoActiveModel<A>,
 {
     Ok(
-        if let Some(model) = get_db::<A::Entity, I>(db, "guild", id).await? {
+        if let Some(model) = get_db::<A, I>(db, "guild", id, None).await? {
             Some(
                 model
                     .into_active_model()
