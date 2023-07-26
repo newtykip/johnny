@@ -12,6 +12,7 @@ use async_recursion::async_recursion;
 use async_trait::async_trait;
 #[cfg(autorole)]
 pub use autorole::AutoroleDB;
+pub use guild::GetAutoroles;
 use sea_orm::{
     ActiveModelBehavior, ActiveModelTrait, DatabaseConnection, DeleteResult, EntityTrait,
     InsertResult, IntoActiveModel, PrimaryKeyTrait,
@@ -57,13 +58,11 @@ where
         .wrap_err(format!("failed to fetch {item} swith id {id} from db"))?
     {
         Ok(Some(model))
+    } else if let Some(model) = model {
+        create_db(db, item, id, model.clone()).await?;
+        get_db(db, item, id, Some(model)).await
     } else {
-        if let Some(model) = model {
-            create_db(db, item, id, model.clone()).await?;
-            get_db(db, item, id, Some(model)).await
-        } else {
-            Ok(None)
-        }
+        Ok(None)
     }
 }
 

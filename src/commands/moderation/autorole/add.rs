@@ -1,15 +1,17 @@
 use johnny::preludes::command::*;
 
-async fn role_autocomplete(ctx: Context<'_>, partial: &str) -> Vec<String> {
+async fn role_autocomplete(ctx: Context<'_>, partial: &str) -> Vec<AutocompleteChoice<String>> {
     ctx.guild()
         .unwrap()
         .roles
-        .iter()
-        .map(|(_, role)| role)
+        .values()
         .filter(|role| !role.is_everyone())
         .filter(|role| !role.managed)
         .filter(|role| role.name.starts_with(partial))
-        .map(|role| role.name.clone())
+        .map(|role| AutocompleteChoice {
+            name: role.name.clone(),
+            value: role.id.to_string(),
+        })
         .collect()
 }
 
@@ -25,12 +27,13 @@ pub async fn add(
     ctx: Context<'_>,
     #[description = "The role to add"]
     #[autocomplete = "role_autocomplete"]
-    role: String,
+    #[rename = "role"]
+    role_id: String,
 ) -> Result<()> {
     ctx.defer_ephemeral().await?;
 
     let guild = ctx.guild().unwrap();
-    let role = guild.role_by_name(&role).unwrap();
+    let role = guild.roles.get(&RoleId(role_id.parse()?)).unwrap();
 
     // create the autorole entry
     let entry = role.create_autorole(&ctx.data().db).await;
@@ -45,13 +48,7 @@ pub async fn add(
     entry?;
 
     // create the embed
-    let mut base_embed = generate_embed(
-        ctx.author(),
-        ctx.author_member().await,
-        Some(colours::SUCCESS),
-    );
-
-    set_guild_thumbnail(&mut base_embed, guild.clone());
+    let mut base_embed = generate_embed!(ctx, Success, true);
 
     base_embed.title("Added autorole!").description(format!(
         "The role {} has been added as an autorole!",
@@ -59,7 +56,7 @@ pub async fn add(
     ));
 
     // announce the new autorole
-    ctx.send(|msg| msg.embed(|embed| message_embed!(embed, base_embed)))
+    ctx.send(|msg| msg.embed(|embed| use_embed!(embed, base_embed)))
         .await?;
 
     Ok(())

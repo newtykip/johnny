@@ -10,12 +10,14 @@ use errors::error_handler;
 use events::event_handler;
 #[cfg(johnny)]
 use imgurs::ImgurClient;
+#[cfg(tui)]
+use johnny::logger::SENDER;
 #[cfg(johnny)]
 use johnny::JOHNNY_GALLERY_IDS;
-use johnny::{logger::SENDER, preludes::general::*, Data};
+use johnny::{preludes::general::*, Data};
 #[cfg(db)]
 use migration::{Migrator, MigratorTrait};
-use poise::{serenity_prelude as serenity, Command, Framework};
+use poise::{serenity_prelude::GatewayIntents, Command, Framework};
 #[cfg(db)]
 use sea_orm::Database;
 use std::sync::Arc;
@@ -105,13 +107,22 @@ async fn main() -> Result<()> {
     #[cfg(pride)]
     commands.push(commands::pride());
 
+    // build up intents
+    let mut intents = GatewayIntents::non_privileged();
+
+    cfg_if! {
+        if #[cfg(autorole)] {
+            intents |= GatewayIntents::GUILD_MEMBERS;
+        }
+    }
+
     // create the bot's framework instance
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
             commands,
-            event_handler: |ctx, event, _framework, _data| {
+            event_handler: |ctx, event, _framework, data| {
                 Box::pin(async move {
-                    event_handler(event, ctx).await?;
+                    event_handler(&mut event.clone(), ctx, data).await?;
                     Ok(())
                 })
             },
@@ -125,7 +136,7 @@ async fn main() -> Result<()> {
             ..Default::default()
         })
         .token(config.token)
-        .intents(serenity::GatewayIntents::non_privileged())
+        .intents(intents)
         .initialize_owners(true)
         .setup(|ctx, _ready, framework| {
             Box::pin(async move {

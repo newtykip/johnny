@@ -1,16 +1,22 @@
-use ::johnny::preludes::general::*;
-#[cfg(johnny)]
-use ::johnny::SUGGESTIONS_ID;
+use ::johnny::{preludes::general::*, Data};
 use poise::Event;
 use serenity::client::Context;
 
+cfg_if! {
+    if #[cfg(johnny)] {
+        use ::johnny::SUGGESTIONS_ID;
+        mod johnny;
+    }
+}
+
+#[cfg(autorole)]
+mod autorole;
 mod general;
-#[cfg(johnny)]
-mod johnny;
 
 pub async fn event_handler(
-    event: &Event<'_>,
+    event: &mut Event<'_>,
     #[allow(unused_variables)] ctx: &Context,
+    #[allow(unused_variables)] data: &Data,
 ) -> Result<()> {
     match event {
         // ready
@@ -34,6 +40,18 @@ pub async fn event_handler(
                 Ok(())
             }
         }
+
+        // member join
+        #[cfg(autorole)]
+        Event::GuildMemberAddition {
+            ref mut new_member, ..
+        } => autorole::apply_role(ctx, new_member, &data.db).await,
+
+        // role delete
+        #[cfg(autorole)]
+        Event::GuildRoleDelete {
+            removed_role_id, ..
+        } => autorole::role_delete(removed_role_id, &data.db).await,
 
         _ => Ok(()),
     }

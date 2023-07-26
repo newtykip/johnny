@@ -15,4 +15,4 @@ do
 	fi
 done
 
-cargo r --features dev$features
+cargo r --features dev$features --no-default-features

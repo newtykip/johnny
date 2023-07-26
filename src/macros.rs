@@ -41,7 +41,7 @@ macro_rules! load_command {
 }
 
 #[macro_export]
-macro_rules! message_embed {
+macro_rules! use_embed {
     ($embed: expr, $base_embed: expr) => {
         {
             $embed.clone_from(&$base_embed);

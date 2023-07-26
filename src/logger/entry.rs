@@ -123,17 +123,17 @@ cfg_if! {
                             for flag in style.iter() {
                                 text = text
                                     .if_supports_color(Stdout, |x| match flag {
-                                        Style::BOLD => x.bold().to_string(),
-                                        Style::RED => x.red().to_string(),
-                                        Style::GREEN => x.green().to_string(),
-                                        Style::YELLOW => x.yellow().to_string(),
+                                        Style::Bold => x.bold().to_string(),
+                                        Style::Red => x.red().to_string(),
+                                        Style::Green => x.green().to_string(),
+                                        Style::Yellow => x.yellow().to_string(),
                                         _ => x.to_string(),
                                     })
                                     .to_string();
                             }
 
                             // colour code booleans
-                            text.split_whitespace()
+                            text.split(" ")
                                 .map(|word| {
                                     let stripped = strip_ansi(word);
 

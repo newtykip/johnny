@@ -1,0 +1,14 @@
+{
+	"generate": {
+		"description": "Generate an event function",
+		"scope": "rust",
+		"prefix": "event",
+		"body": [
+			"use johnny::preludes::event::*;",
+			"",
+			"pub async fn $1($2) -> Result<()> {",
+			"    Ok(())",
+			"}"
+		]
+	}
+}

@@ -6,11 +6,11 @@ async fn run(ctx: Context<'_>) -> Result<()> {
     #[cfg(not(johnny))]
     ctx.defer_ephemeral().await?;
 
-    let base_embed = generate_embed(ctx.author(), ctx.author_member().await, None);
+    let base_embed = generate_embed!(ctx);
 
     // if the johnny feature is enabled, add a random johnny image
     #[cfg(johnny)]
-    let (number, johnny_image) = johnny_image(&ctx.data());
+    let (number, johnny_image) = johnny_image(ctx.data());
     #[cfg(johnny)]
     let footer_text = format!(
         "Image number {} out of {}",

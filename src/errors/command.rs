@@ -1,10 +1,5 @@
 use color_eyre::Report;
-use johnny::{
-    embed::{colours, generate_embed, set_guild_thumbnail},
-    message_embed,
-    preludes::general::*,
-    Context,
-};
+use johnny::{generate_embed, preludes::general::*, use_embed, Context};
 
 pub async fn run(error: Report, ctx: Context<'_>) {
     // log the error
@@ -20,20 +15,12 @@ pub async fn run(error: Report, ctx: Context<'_>) {
     .unwrap();
 
     // create the embed
-    let mut base_embed = generate_embed(
-        ctx.author(),
-        ctx.author_member().await,
-        Some(colours::FAILURE),
-    );
-
-    if let Some(guild) = ctx.guild() {
-        set_guild_thumbnail(&mut base_embed, guild);
-    }
+    let mut base_embed = generate_embed!(ctx, Failure, true);
 
     base_embed.title("Error!").description(error);
 
     // announce the error
-    ctx.send(|msg| msg.embed(|embed| message_embed!(embed, base_embed)))
+    ctx.send(|msg| msg.embed(|embed| use_embed!(embed, base_embed)))
         .await
         .unwrap();
 }

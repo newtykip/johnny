@@ -6,7 +6,6 @@ use super::{
 use crate::{preludes::general::*, EPOCH};
 use async_trait::async_trait;
 use once_cell::sync::Lazy;
-use poise::serenity_prelude::Member;
 use rustflake::Snowflake;
 use sea_orm::{
     ActiveModelTrait, ActiveValue::*, ColumnTrait, DatabaseConnection, DeleteResult, EntityTrait,
@@ -16,6 +15,7 @@ use sea_orm::{
 static mut SNOWFLAKE_GENERATOR: Lazy<Snowflake> = Lazy::new(|| Snowflake::new(EPOCH, 2, 1));
 const ITEM: &str = "member";
 
+#[allow(clippy::needless_update)]
 fn default_model(id: String, user_id: String, guild_id: String) -> ActiveModel {
     ActiveModel {
         id: Set(id),

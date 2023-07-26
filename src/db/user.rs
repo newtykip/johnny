@@ -5,11 +5,11 @@ use super::{
 };
 use crate::preludes::general::*;
 use async_trait::async_trait;
-use poise::serenity_prelude::{User, UserId};
 use sea_orm::{ActiveValue::*, DatabaseConnection, DeleteResult, InsertResult};
 
 const ITEM: &str = "user";
 
+#[allow(clippy::needless_update)]
 fn default_model(id: String) -> ActiveModel {
     ActiveModel {
         id: Set(id),

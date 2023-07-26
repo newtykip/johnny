@@ -1,4 +1,7 @@
-use super::{entity::autorole::{ActiveModel, Entity}, GetDB};
+use super::{
+    entity::autorole::{ActiveModel, Entity},
+    GetDB,
+};
 use crate::{preludes::general::*, EPOCH};
 use async_trait::async_trait;
 use once_cell::sync::Lazy;
@@ -19,6 +22,7 @@ impl AutoroleDB for Role {
     async fn create_autorole(&self, db: &DatabaseConnection) -> Result<InsertResult<ActiveModel>> {
         self.guild_id.get_db(db).await?;
 
+        #[allow(clippy::needless_update)]
         let model = ActiveModel {
             id: Set(unsafe { SNOWFLAKE_GENERATOR.generate() }.to_string()),
             guild_id: Set(self.guild_id.to_string()),

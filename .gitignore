@@ -17,6 +17,6 @@ Cargo.lock
 .env
 emit.rs
 ./johnny
-*.sqlite
+*.sqlite*
 src/build_data.rs
 src/db/entity/*.rs

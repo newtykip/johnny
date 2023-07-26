@@ -20,17 +20,11 @@ pub async fn toggle(ctx: Context<'_>) -> Result<()> {
         .unwrap();
 
     // create the embed
-    let mut base_embed = generate_embed(
-        ctx.author(),
-        ctx.author_member().await,
-        Some(if model.autorole {
-            colours::SUCCESS
-        } else {
-            colours::FAILURE
-        }),
-    );
-
-    set_guild_thumbnail(&mut base_embed, guild);
+    let mut base_embed = if model.autorole {
+        generate_embed!(ctx, Success, true)
+    } else {
+        generate_embed!(ctx, Failure, true)
+    };
 
     base_embed
         .title(if model.autorole {
@@ -48,7 +42,7 @@ pub async fn toggle(ctx: Context<'_>) -> Result<()> {
         ));
 
     // announce the toggle
-    ctx.send(|msg| msg.embed(|embed| message_embed!(embed, base_embed)))
+    ctx.send(|msg| msg.embed(|embed| use_embed!(embed, base_embed)))
         .await?;
 
     Ok(())

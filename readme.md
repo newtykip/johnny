@@ -61,7 +61,7 @@ note: **sqlite** is the only enabled database driver across all of the build mat
 
 ## in the near future...
 
-tere are some neat things we'd like to have done within the near future.
+here are some neat things we'd like to have done within the near future.
 
 - create support hub for instances of the bot
 	- add extra debugging info in the logs to help volunteers aid with this information
@@ -85,6 +85,7 @@ tere are some neat things we'd like to have done within the near future.
 - genai-like feature using markov chains
 - communicate with llama2?
 - dockerise?
+- sticky roles
 
 and much much more (:
 

@@ -2,6 +2,7 @@
 	"recommendations": [
 		"rust-lang.rust-analyzer",
 		"github.vscode-github-actions",
-		"aaron-bond.better-comments"
+		"aaron-bond.better-comments",
+		"tamasfe.even-better-toml"
 	]
 }

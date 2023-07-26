@@ -14,6 +14,7 @@ cfg_if! {
     }
 }
 
+#[cfg(tui)]
 type Sender = mpsc::Sender<Entry>;
 pub type Reciever = mpsc::Receiver<Entry>;
 type Components = Vec<(Box<dyn ToString + Send>, Style)>;
