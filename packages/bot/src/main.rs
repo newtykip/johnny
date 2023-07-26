@@ -43,7 +43,7 @@ async fn start_bot(framework: Arc<Framework<Data, Error>>) -> Result<()> {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // setup eyre
+    // set-up eyre
     color_eyre::install()?;
 
     // load the config

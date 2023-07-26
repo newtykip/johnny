@@ -16,7 +16,7 @@ use views::{log, main};
 
 const TICK_RATE: Duration = Duration::from_millis(250);
 
-// todo: first time setup
+// todo: first time set-up
 // todo: configuration
 // todo: make button highlights only appear over text
 // todo: add guild, user, member views
