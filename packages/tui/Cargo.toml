@@ -1,0 +1,13 @@
+[package]
+name = "tui"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[features]
+
+[dependencies]
+common = { path = "../common", features = ["tui"] }
+crossterm = { workspace = true }
+logger = { path = "../logger", features = ["tui"] }
+ratatui = { workspace = true }

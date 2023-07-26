@@ -1,0 +1,23 @@
+[package]
+name = "logger"
+version = "0.1.0"
+edition = "2021"
+build = "build.rs"
+publish = false
+
+[features]
+tui = ["dep:ratatui"]
+verbose = []
+
+[dependencies]
+bitflags = "2.3.3"
+chrono = "0.4.26"
+common = { path = "../common" }
+owo-colors = { version = "3.5.0", features = ["supports-colors"] }
+poise = { workspace = true }
+ratatui = { workspace = true, optional = true }
+strip-ansi = "0.1.0"
+tokio = { workspace = true, features = ["parking_lot"] }
+
+[build-dependencies]
+cfg_aliases = { workspace = true }

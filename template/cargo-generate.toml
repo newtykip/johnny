@@ -1,0 +1,11 @@
+[template]
+cargo_generate_version = ">=0.9.0"
+
+[placeholders]
+build = { type = "bool", prompt = "Do you want to include a build script?", default = true }
+
+[conditional.'build == false']
+ignore = ["build.rs"]
+
+[hooks]
+pre = ["pre-script.rhai"]

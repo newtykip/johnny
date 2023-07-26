@@ -1,0 +1,15 @@
+[package]
+name = "{{ project-name }}"
+version = "0.1.0"
+edition = "2021"
+build = "build.rs"
+publish = false
+
+[features]
+
+[dependencies]
+common = { path = "../common" }
+poise = { workspace = true }
+
+[build-dependencies]
+cfg_aliases = { workspace = true }

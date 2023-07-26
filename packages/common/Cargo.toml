@@ -1,0 +1,22 @@
+[package]
+name = "common"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[features]
+johnny = []
+db = []
+tui = ["dep:ratatui", "dep:crossterm"]
+
+[dependencies]
+cfg-if = "1.0.0"
+color-eyre = { workspace = true }
+crossterm = { workspace = true, optional = true }
+poise = { workspace = true }
+ratatui = { workspace = true, optional = true }
+sea-orm = { workspace = true }
+serenity = { workspace = true }
+
+[build-dependencies]
+cfg_aliases = { workspace = true }

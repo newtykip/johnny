@@ -15,8 +15,8 @@ Cargo.lock
 
 # other
 .env
-emit.rs
 ./johnny
 *.sqlite*
-src/build_data.rs
-src/db/entity/*.rs
+packages/bot/src/build_data.rs
+packages/db/src/entity/*
+.vscode/settings.json

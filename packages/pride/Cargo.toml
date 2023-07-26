@@ -1,0 +1,15 @@
+[package]
+name = "pride"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[features]
+
+[dependencies]
+common = { path = "../common" }
+image = { workspace = true }
+poise = { workspace = true }
+pride-overlay = "1.1.0"
+reqwest = { workspace = true }
+strum = "0.25.0"

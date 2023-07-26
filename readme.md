@@ -12,7 +12,7 @@ for those who do not know much about programming, johnny is written in a compile
 
 ### how do i actually compile it?
 
-if you do not have it already, you are going to need the Rust
+*TODO: write*
 
 #### feature List
 the following features are enabled by default, you can disable these during compilation by using the `--no-default-features` flag (not recommended unless you know what you're doing!)

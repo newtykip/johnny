@@ -3,6 +3,8 @@
 		"rust-lang.rust-analyzer",
 		"github.vscode-github-actions",
 		"aaron-bond.better-comments",
-		"tamasfe.even-better-toml"
+		"tamasfe.even-better-toml",
+		"bierner.github-markdown-preview",
+		"fooxly.workspace"
 	]
 }
