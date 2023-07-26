@@ -18,5 +18,5 @@ Cargo.lock
 ./johnny
 *.sqlite*
 packages/bot/src/build_data.rs
-packages/db/src/entity/*
+packages/db/src/entity/*.rs
 .vscode/settings.json
