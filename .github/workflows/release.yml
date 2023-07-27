@@ -65,9 +65,11 @@ jobs:
       # prepare buildx
       - name: Set-up QEMU
         uses: docker/setup-qemu-action@v2
+        if: ${{ matrix.platform.cross }}
 
       - name: Set-up Docker Buildx
         uses: docker/setup-buildx-action@v2
+        if: ${{ matrix.platform.cross }}
 
       # prepare toolchain
       - name: Install toolchain
@@ -106,4 +108,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: johnny-${{ matrix.platform.os_name }}-${{ join(matrix.features, ',') }},${{ matrix.db }}${{ matrix.tui && ',tui' || '' }}
-          path: "johnny*"
+          path: "bot*"
