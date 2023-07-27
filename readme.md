@@ -3,7 +3,7 @@
 <h3>johnny</h3>
 the least bloated all-in-one bot on discord<br/><br/>
 </div>
-
+as
 > If you want to self-host johnny for yourself, [click here](consumer.readme.md).
 >
 > If you want to contribute, [click here](developer.readme.md).
@@ -18,7 +18,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <table>
   <tbody>
     <tr>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/newt"><img src="https://avatars.githubusercontent.com/u/371857?v=4?s=100" width="100px;" alt="newt"/><br /><sub><b>newt</b></sub></a><br /><a href="https://github.com/newtykins/johnny/commits?author=newt" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://newty.dev/"><img src="https://avatars.githubusercontent.com/u/19301186?v=4?s=100" width="100px;" alt="newt :D"/><br /><sub><b>newt :D</b></sub></a><br /><a href="https://github.com/newtykins/johnny/commits?author=newtykins" title="Code">💻</a> <a href="https://github.com/newtykins/johnny/commits?author=newtykins" title="Documentation">📖</a> <a href="#tutorial-newtykins" title="Tutorials">✅</a> <a href="#projectManagement-newtykins" title="Project Management">📆</a> <a href="#ideas-newtykins" title="Ideas, Planning, & Feedback">🤔</a></td>
     </tr>
   </tbody>
 </table>

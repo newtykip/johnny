@@ -11,12 +11,16 @@
   "commitConvention": "none",
   "contributors": [
     {
-      "login": "newt",
-      "name": "newt",
-      "avatar_url": "https://avatars.githubusercontent.com/u/371857?v=4",
-      "profile": "https://github.com/newt",
+      "login": "newtykins",
+      "name": "newt :D",
+      "avatar_url": "https://avatars.githubusercontent.com/u/19301186?v=4",
+      "profile": "https://newty.dev/",
       "contributions": [
-        "code"
+        "code",
+        "doc",
+        "tutorial",
+        "projectManagement",
+        "ideas"
       ]
     }
   ],
