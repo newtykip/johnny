@@ -73,8 +73,12 @@ async fn main() -> Result<()> {
     #[cfg(db)]
     let db = Database::connect(config.database.url).await?;
 
-    // run migrations
-    #[cfg(db)]
+    // apply new migrations on stable
+    #[cfg(all(db, not(dev)))]
+    Migrator::up(&db, None).await?;
+
+    // reset database when dev
+    #[cfg(all(db, dev))]
     Migrator::refresh(&db).await?;
 
     // build intents

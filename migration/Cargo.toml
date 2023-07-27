@@ -1,8 +1,8 @@
 [package]
-name = "migration"
-version = "0.1.0"
 edition = "2021"
+name = "migration"
 publish = false
+version = "0.1.0"
 
 [lib]
 name = "migration"
@@ -13,8 +13,5 @@ async-std = { version = "1", features = ["attributes", "tokio1"] }
 once_cell = "1.18.0"
 
 [dependencies.sea-orm-migration]
+features = ["runtime-tokio-rustls", "sqlx-sqlite"]
 version = "0.11.0"
-features = [
-  "runtime-tokio-rustls",
-  "sqlx-sqlite"
-]

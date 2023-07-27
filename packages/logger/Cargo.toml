@@ -1,9 +1,10 @@
 [package]
-name = "logger"
-version = "0.1.0"
-edition = "2021"
+authors.workspace = true
 build = "build.rs"
-publish = false
+edition.workspace = true
+name = "logger"
+publish.workspace = true
+version.workspace = true
 
 [features]
 tui = ["dep:ratatui"]

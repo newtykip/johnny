@@ -1,9 +1,10 @@
 [package]
-name = "db"
-version = "0.1.0"
-edition = "2021"
+authors.workspace = true
 build = "build.rs"
-publish = false
+edition.workspace = true
+name = "db"
+publish.workspace = true
+version.workspace = true
 
 [features]
 autorole = []

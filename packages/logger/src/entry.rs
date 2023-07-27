@@ -1,4 +1,4 @@
-use crate::{Components, LogLevel, Style};
+use crate::{Component, LogLevel, Style};
 use chrono::{DateTime, Local};
 use common::prelude::*;
 use poise::serenity_prelude::{ChannelId, Guild, User};
@@ -8,7 +8,7 @@ const TIMESTAMP_FORMAT: &str = "%d/%m/%y %r %Z";
 
 pub struct Entry {
     pub level: LogLevel,
-    pub components: Components,
+    pub components: Vec<Component>,
     pub timestamp: DateTime<Local>,
     pub guild: Option<Guild>,
     pub user: Option<User>,
@@ -53,7 +53,7 @@ cfg_if! {
                         ),
                     ];
 
-                    spans.extend(self.components.iter().map(|(text, style)| {
+                    spans.extend(self.components.iter().map(|(text, style): &Component| {
                         let text = text.to_string();
                         let mut tui_style = Some(RatStyle::default());
 
@@ -113,7 +113,7 @@ cfg_if! {
                     self
                         .components
                         .iter()
-                        .map(|(text, style)| {
+                        .map(|(text, style): &Component| {
                             let mut text = text.to_string();
 
                             // apply styles to component

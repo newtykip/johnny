@@ -1,9 +1,9 @@
 [package]
+authors.workspace = true
+edition.workspace = true
 name = "{{ project-name }}"
-version = "0.1.0"
-edition = "2021"
-build = "build.rs"
-publish = false
+publish.workspace = true
+version.workspace = true
 
 [features]
 

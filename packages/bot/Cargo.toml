@@ -1,19 +1,27 @@
 [package]
-name = "bot"
-version = "0.1.0"
-edition = "2021"
+authors.workspace = true
 build = "build.rs"
-publish = false
+edition.workspace = true
+name = "bot"
+publish.workspace = true
+version.workspace = true
 
 [features]
-johnny = ["dep:johnny", "common/johnny", "sqlite", "verbose", "tui", "autorole", "pride"]
-dev = ["dep:dotenvy_macro"]
+dev = []
+johnny = [
+  "dep:johnny",
+  "common/johnny",
+  "sqlite",
+  "verbose",
+  "autorole",
+  "pride",
+]
 tui = ["dep:tui", "logger/tui"]
 verbose = ["logger/verbose"]
 
 # moderation
-moderation = ["autorole"]
 autorole = ["dep:autorole", "db?/autorole"]
+moderation = ["autorole"]
 
 # image
 image = ["pride"]
@@ -21,8 +29,8 @@ pride = ["dep:pride"]
 
 # db
 db = ["dep:db", "dep:migration", "dep:sea-orm", "common/db"]
-postgres = ["db", "sea-orm?/sqlx-postgres"]
 mysql = ["db", "sea-orm?/sqlx-mysql"]
+postgres = ["db", "sea-orm?/sqlx-postgres"]
 sqlite = ["db", "sea-orm?/sqlx-sqlite"]
 
 [dependencies]
@@ -30,7 +38,6 @@ autorole = { path = "../autorole", optional = true }
 color-eyre = { workspace = true }
 common = { path = "../common" }
 db = { path = "../db", optional = true }
-dotenvy_macro = { version = "0.15.7", optional = true }
 johnny = { path = "../johnny", optional = true }
 logger = { path = "../logger" }
 migration = { path = "../../migration", optional = true }
@@ -44,3 +51,4 @@ tui = { path = "../tui", optional = true }
 
 [build-dependencies]
 cfg_aliases = { workspace = true }
+rayon = { workspace = true }

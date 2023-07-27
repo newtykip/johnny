@@ -19,7 +19,7 @@ cfg_if! {
 #[cfg(tui)]
 type Sender = mpsc::Sender<Entry>;
 pub type Reciever = mpsc::Receiver<Entry>;
-type Components = Vec<(Box<dyn ToString + Send>, Style)>;
+type Component = (Box<dyn ToString + Send>, Style);
 
 bitflags! {
     #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -38,7 +38,7 @@ bitflags! {
 macro_rules! generate_macro {
     ($($name: ident => $level: ident)*) => {
         $(
-            pub async fn $name(components: Components, ctx: Option<&Context<'_>>) -> Result<()>
+            pub async fn $name(components: Vec<Component>, ctx: Option<&Context<'_>>) -> Result<()>
             {
                 log(LogLevel::$level, components, ctx).await
             }
@@ -61,7 +61,7 @@ macro_rules! components {
 }
 
 /// Log a message
-async fn log(level: LogLevel, components: Components, ctx: Option<&Context<'_>>) -> Result<()> {
+async fn log(level: LogLevel, components: Vec<Component>, ctx: Option<&Context<'_>>) -> Result<()> {
     let entry = Entry {
         level,
         components,

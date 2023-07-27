@@ -14,9 +14,8 @@ Cargo.lock
 *.pdb
 
 # other
-.env
+config.toml
 ./johnny
 *.sqlite*
 packages/bot/src/build_data.rs
 packages/db/src/entity/*.rs
-.vscode/settings.json
