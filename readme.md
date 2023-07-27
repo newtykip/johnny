@@ -3,7 +3,7 @@
 <h3>johnny</h3>
 the least bloated all-in-one bot on discord<br/><br/>
 </div>
-as
+
 > If you want to self-host johnny for yourself, [click here](consumer.readme.md).
 >
 > If you want to contribute, [click here](developer.readme.md).

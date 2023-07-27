@@ -41,4 +41,28 @@ we use the stable toolchain. please make sure you are not using the nightly tool
 
 there is a special **dev** compiler feature that you will likely want to have enabled which we do not mention in the [consumer guide](consumer.readme.md). it adds some extra debugging tools to help you develop easier!
 
+## future ideas
+
+i swear i will move this to trello or smth soon i swear i swear i swear
+
+- make it talk back using [markov chains](https://en.wikipedia.org/wiki/Markov_chain)
+	- make sure a guild consents to this data collection, maybe per-user? but then there will be near to no data
+- modlogs
+- ticket system
+- game commands
+	- overwatch
+		- [ow-api](https://ow-api.com/) or scraping data off of their website
+	- minecraft
+		- hypixel
+			- skyblock
+		- server scanner
+			- allow guilds to have their own minecraft server
+		- integration with discordsrv? or maybe my our version of it...
+- configuration through the tui
+- web dashboard (please if you have any skill in this department hmu because i am miserable on the front-end)
+- integration with generative ai models
+	- llama2?
+- dockerise
+- sticky roles
+
 <sub>licensed with the <a href="license.md">opinionated queer license v1.1</a> - tl;dr see <a href="https://oql.avris.it/">here</a> :]</sub>
