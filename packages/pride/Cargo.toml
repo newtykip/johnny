@@ -1,8 +1,9 @@
 [package]
+authors.workspace = true
+edition.workspace = true
 name = "pride"
-version = "0.1.0"
-edition = "2021"
-publish = false
+publish.workspace = true
+version.workspace = true
 
 [features]
 

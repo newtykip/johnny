@@ -1,30 +1,42 @@
 [workspace]
+default-members = ["packages/bot"]
 members = [
-	"migration",
-	"packages/autorole",
-	"packages/bot",
-	"packages/common",
-	"packages/db",
-	"packages/johnny",
-	"packages/logger",
-	"packages/pride",
-	"packages/tui"
+  "migration",
+  "packages/autorole",
+  "packages/bot",
+  "packages/common",
+  "packages/db",
+  "packages/johnny",
+  "packages/logger",
+  "packages/pride",
+  "packages/tui",
 ]
 
-default-members = ["packages/bot"]
+[workspace.package]
+authors = ["newtykins"]
+edition = "2021"
+publish = false
+version = "0.1.0"
 
 [workspace.dependencies]
-sea-orm = { version = "0.11.3", features = ["runtime-tokio-rustls", "macros"] }
-tokio = { version = "1.28.2", features = ["macros", "rt-multi-thread"] }
-poise = "0.5.5"
 cfg_aliases = "0.1.1"
-serenity = { version = "0.11.5", default-features = false, features = ["client", "gateway", "rustls_backend", "model", "cache"] }
 color-eyre = "0.6.2"
-serde = "1.0.171"
-ratatui = "0.22.0"
 crossterm = "0.26.1"
 image = "0.24.6"
+poise = "0.5.5"
+ratatui = "0.22.0"
+rayon = "1.7.0"
 reqwest = "0.11.18"
+sea-orm = { version = "0.11.3", features = ["runtime-tokio-rustls", "macros"] }
+serde = "1.0.171"
+serenity = { version = "0.11.5", default-features = false, features = [
+  "client",
+  "gateway",
+  "rustls_backend",
+  "model",
+  "cache",
+] }
+tokio = { version = "1.28.2", features = ["macros", "rt-multi-thread"] }
 
 [workspace.metadata.cross.target.aarch64-unknown-linux-gnu]
 dockerfile = "./docker/Dockerfile.aarch64"
@@ -35,9 +47,10 @@ denylist = ["postgres", "mysql"]
 
 [profile.dev]
 opt-level = 0
+overflow-checks = false
 
 [profile.release]
+codegen-units = 1
+lto = true
 opt-level = 3
 strip = true
-lto = true
-codegen-units = 1

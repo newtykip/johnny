@@ -1,12 +1,14 @@
 [package]
+authors.workspace = true
+build = "build.rs"
+edition.workspace = true
 name = "common"
-version = "0.1.0"
-edition = "2021"
-publish = false
+publish.workspace = true
+version.workspace = true
 
 [features]
-johnny = []
 db = []
+johnny = []
 tui = ["dep:ratatui", "dep:crossterm"]
 
 [dependencies]
@@ -15,6 +17,7 @@ color-eyre = { workspace = true }
 crossterm = { workspace = true, optional = true }
 poise = { workspace = true }
 ratatui = { workspace = true, optional = true }
+rayon = { workspace = true }
 sea-orm = { workspace = true }
 serenity = { workspace = true }
 

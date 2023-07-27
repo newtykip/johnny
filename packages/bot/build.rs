@@ -1,4 +1,5 @@
 use cfg_aliases::cfg_aliases;
+use rayon::prelude::*;
 use std::{env, error::Error, fs::File, io::Write};
 
 /// All features that should not be shown in the build_data.rs file
@@ -28,7 +29,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 pub const FEATURES: [&str; {}] = [{}];",
             features.len(),
             features
-                .iter()
+                .par_iter()
                 .map(|f| format!("\"{}\"", f))
                 .collect::<Vec<_>>()
                 .join(", ")

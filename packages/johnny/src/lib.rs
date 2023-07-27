@@ -30,9 +30,10 @@ pub async fn fetch_images(imgur_token: &str) -> Result<Vec<String>> {
                 .await?
                 .data
                 .images
-                .iter()
+                .par_iter()
                 .map(|image| image.link.clone())
-                .filter(|link| link.ends_with(".png") || link.ends_with(".jpg")),
+                .filter(|link| link.ends_with(".png") || link.ends_with(".jpg"))
+                .collect::<Vec<_>>(),
         );
     }
 

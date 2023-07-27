@@ -4,6 +4,7 @@ pub use color_eyre::{
     Help,
 };
 pub use poise::serenity_prelude::*;
+pub use rayon::prelude::*;
 
 pub trait IsEveryone {
     /// check if a role is the @everyone role

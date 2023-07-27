@@ -1,7 +1,9 @@
-token = ""
+token = "" # your discord bot token
 
-[database]
-url = ""
+# remove if a database driver is not enabled
+[databases]
+url = "" # the connection url for your database
 
+# remove if johnny feature is not enabled
 [johnny]
-imgur = ""
+imgur = "" # your imgur client id

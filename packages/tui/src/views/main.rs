@@ -75,7 +75,7 @@ pub fn draw<B: Backend>(f: &mut Frame<B>, app: &App, state: &State) -> Result<()
 
     let list = List::new(
         app.logs
-            .iter()
+            .par_iter()
             .map(|log| {
                 ListItem::new(log.text()).style({
                     let mut style = Style::default();
