@@ -26,5 +26,5 @@ create_migration!(
                 .unique()
         ),
     GuildId,
-    RoleId,
+    RoleId
 );

@@ -23,16 +23,14 @@ async fn run(ctx: Context<'_>) -> Result<()> {
             msg.embed(|embed| {
                 embed.clone_from(&base_embed);
 
-                cfg_if! {
-                    if #[cfg(johnny)] {
-                        embed
-                            .title("meow!")
-                            .image(&johnny_image)
-                            .footer(|footer| footer.text(&footer_text))
-                    } else {
-                        embed.title("ping!")
-                    }
-                }
+                #[cfg(johnny)]
+                return embed
+                    .title("meow!")
+                    .image(&johnny_image)
+                    .footer(|footer| footer.text(&footer_text));
+
+                #[cfg(not(johnny))]
+                return embed.title("ping!");
             })
         })
         .await?;
@@ -47,16 +45,14 @@ async fn run(ctx: Context<'_>) -> Result<()> {
             msg.embed(|embed| {
                 embed.clone_from(&base_embed);
 
-                cfg_if! {
-                    if #[cfg(johnny)] {
-                        embed
-                            .title(format!("meow! ({} ms)", ping))
-                            .image(&johnny_image)
-                            .footer(|footer| footer.text(&footer_text))
-                    } else {
-                        embed.title(format!("ping! ({} ms)", ping))
-                    }
-                }
+                #[cfg(johnny)]
+                return embed
+                    .title(format!("meow! ({} ms)", ping))
+                    .image(&johnny_image)
+                    .footer(|footer| footer.text(&footer_text));
+
+                #[cfg(not(johnny))]
+                return embed.title(format!("ping! ({} ms)", ping));
             })
         })
         .await?;
@@ -64,18 +60,16 @@ async fn run(ctx: Context<'_>) -> Result<()> {
     Ok(())
 }
 
-cfg_if! {
-    if #[cfg(johnny)] {
-        /// meow! (checks ping)
-        #[command(slash_command, rename = "meow")]
-        pub async fn ping(ctx: Context<'_>) -> Result<()> {
-            run(ctx).await
-        }
-    } else {
-        /// checks ping
-        #[command(slash_command)]
-        pub async fn ping(ctx: Context<'_>) -> Result<()> {
-            run(ctx).await
-        }
-    }
+/// meow! (checks ping)
+#[cfg(johnny)]
+#[command(slash_command, rename = "meow")]
+pub async fn ping(ctx: Context<'_>) -> Result<()> {
+    run(ctx).await
+}
+
+/// checks ping
+#[cfg(not(johnny))]
+#[command(slash_command)]
+pub async fn ping(ctx: Context<'_>) -> Result<()> {
+    run(ctx).await
 }

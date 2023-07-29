@@ -1,49 +1,40 @@
 // todo: have models in memory which are occasionally synced with the database to reduce writes. drop these on an interval to ensure a low memory overhead.
 
 #[cfg(autorole)]
-mod autorole;
-pub mod entity;
-mod guild;
-mod member;
+pub mod autorole;
+mod entity;
+#[cfg(events)]
+pub mod events;
+pub mod guild;
+mod macros;
+pub mod member;
 pub mod prelude;
-mod user;
+#[cfg(sticky)]
+pub mod sticky;
+pub mod user;
 
 use async_recursion::async_recursion;
 use async_trait::async_trait;
-#[cfg(autorole)]
-pub use autorole::AutoroleDB;
-use common::prelude::*;
-pub use guild::GetAutoroles;
-use sea_orm::{
-    ActiveModelBehavior, ActiveModelTrait, DatabaseConnection, DeleteResult, EntityTrait,
-    InsertResult, IntoActiveModel, PrimaryKeyTrait,
-};
+use common::{prelude::*, EPOCH};
+use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, ModelTrait, PrimaryKeyTrait};
 use std::fmt::Display;
+#[cfg(any(autorole, sticky))]
+use {once_cell::sync::Lazy, rustflake::Snowflake};
 
-// c
-async fn create_db<A, I>(
-    db: &DatabaseConnection,
-    item: &str,
-    id: &I,
-    model: A,
-) -> Result<InsertResult<A>>
-where
-    A: ActiveModelTrait,
-    I: Into<<<A::Entity as EntityTrait>::PrimaryKey as PrimaryKeyTrait>::ValueType> + Display,
-{
-    A::Entity::insert(model)
-        .exec(db)
-        .await
-        .wrap_err(format!("failed to insert {item} with id {id} into db"))
+#[cfg(any(autorole, sticky))]
+static mut SNOWFLAKE: Lazy<Snowflake> = Lazy::new(|| Snowflake::new(EPOCH, 0, 0));
+
+#[cfg(any(autorole, sticky))]
+pub fn generate_id() -> String {
+    unsafe { SNOWFLAKE.generate() }.to_string()
 }
 
-// r
 #[async_recursion]
 async fn get_db<A, I>(
     db: &DatabaseConnection,
     item: &str,
     id: &I,
-    model: Option<A>,
+    model: A,
 ) -> Result<Option<<A::Entity as EntityTrait>::Model>>
 where
     A: ActiveModelTrait + Clone + Send + Sync,
@@ -59,108 +50,13 @@ where
         .wrap_err(format!("failed to fetch {item} swith id {id} from db"))?
     {
         Ok(Some(model))
-    } else if let Some(model) = model {
-        create_db(db, item, id, model.clone()).await?;
-        get_db(db, item, id, Some(model)).await
     } else {
-        Ok(None)
+        A::Entity::insert(model.clone()).exec(db).await?;
+        get_db(db, item, id, model).await
     }
 }
 
-async fn get_db_all<E>(db: &DatabaseConnection, item: &str) -> Result<Vec<E::Model>>
-where
-    E: EntityTrait,
-{
-    E::find()
-        .all(db)
-        .await
-        .wrap_err(format!("failed to fetch all {item}s from db"))
-}
-
-// u
-async fn update_db<A, I, F>(
-    db: &DatabaseConnection,
-    item: &str,
-    id: &I,
-    model: A,
-    modify: F,
-) -> Result<Option<<A::Entity as EntityTrait>::Model>>
-where
-    A: ActiveModelTrait + ActiveModelBehavior + Send + Sync,
-    I: Into<<<A::Entity as EntityTrait>::PrimaryKey as PrimaryKeyTrait>::ValueType>
-        + Display
-        + Clone
-        + Sync
-        + Send,
-    F: Send + FnOnce(&mut A) -> &mut A,
-    <<A as sea_orm::ActiveModelTrait>::Entity as sea_orm::EntityTrait>::Model: IntoActiveModel<A>,
-{
-    Ok(
-        if let Some(model) = get_db::<A, I>(db, item, id, Some(model)).await? {
-            Some(
-                modify(&mut model.into_active_model())
-                    .clone()
-                    .update(db)
-                    .await
-                    .wrap_err(format!("failed to update {item} with id {id} in db"))?,
-            )
-        } else {
-            None
-        },
-    )
-}
-
-// d
-async fn delete_db<A, I>(
-    db: &DatabaseConnection,
-    item: &str,
-    id: &I,
-) -> Result<Option<DeleteResult>>
-where
-    A: ActiveModelTrait + ActiveModelBehavior + Send + Sync,
-    I: Into<<<A::Entity as EntityTrait>::PrimaryKey as PrimaryKeyTrait>::ValueType>
-        + Display
-        + Clone
-        + Sync
-        + Send,
-    <<A as sea_orm::ActiveModelTrait>::Entity as sea_orm::EntityTrait>::Model: IntoActiveModel<A>,
-{
-    Ok(
-        if let Some(model) = get_db::<A, I>(db, "guild", id, None).await? {
-            Some(
-                model
-                    .into_active_model()
-                    .delete(db)
-                    .await
-                    .wrap_err(format!("failed to delete {item} with id {id} from db"))?,
-            )
-        } else {
-            None
-        },
-    )
-}
-
 #[async_trait]
-pub trait GetDB<A: ActiveModelTrait> {
-    // c
-    async fn create_db(&self, db: &DatabaseConnection) -> Result<InsertResult<A>>;
-
-    // r
-    async fn get_db_all(db: &DatabaseConnection) -> Result<Vec<<A::Entity as EntityTrait>::Model>>;
-    async fn get_db(
-        &self,
-        db: &DatabaseConnection,
-    ) -> Result<Option<<A::Entity as EntityTrait>::Model>>;
-
-    // u
-    async fn update_db<F>(
-        &self,
-        db: &DatabaseConnection,
-        modify: F,
-    ) -> Result<Option<<A::Entity as EntityTrait>::Model>>
-    where
-        F: Send + FnOnce(&mut A) -> &mut A;
-
-    // d
-    async fn delete_db(&self, db: &DatabaseConnection) -> Result<Option<DeleteResult>>;
+pub trait DB<M: ModelTrait> {
+    async fn db(&self, db: &DatabaseConnection) -> Result<Option<M>>;
 }

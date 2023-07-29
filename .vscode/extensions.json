@@ -5,6 +5,8 @@
 		"aaron-bond.better-comments",
 		"tamasfe.even-better-toml",
 		"bierner.github-markdown-preview",
-		"skellock.just"
+		"skellock.just",
+		"ckolkman.vscode-postgres",
+		"qwtel.sqlite-viewer"
 	]
 }

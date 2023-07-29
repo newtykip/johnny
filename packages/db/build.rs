@@ -28,7 +28,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
 
     cfg_aliases! {
-        autorole: { feature = "autorole" }
+        autorole: { feature = "autorole" },
+        sticky: { feature = "sticky" },
+        events: { feature = "events" }
     }
 
     Ok(())

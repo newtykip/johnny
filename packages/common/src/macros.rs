@@ -2,14 +2,14 @@
 #[macro_export]
 macro_rules! load_event {
     // no predicate - name
-    ($($name: ident)*) => {
+    ($($name:ident),+) => {
         $(
             mod $name;
             pub use $name::$name;
         )*
     };
     // depends on predicate - name | predicate
-    ($($name:ident | $predicate:ident)*) => {
+    ($($name:ident | $predicate:ident),+) => {
         $(
             #[cfg($predicate)]
             mod $name;
@@ -23,14 +23,14 @@ macro_rules! load_event {
 #[macro_export]
 macro_rules! load_command {
     // no predicate - name
-    ($($name: ident)*) => {
+    ($($name:ident),+) => {
         $(
             mod $name;
             pub use $name::$name;
         )*
     };
     // depends on predicate - name | predicate
-    ($($name: ident | $predicate: ident)*) => {
+    ($($name:ident | $predicate:ident),+) => {
         $(
             #[cfg($predicate)]
             mod $name;
@@ -42,13 +42,13 @@ macro_rules! load_command {
 
 #[macro_export]
 macro_rules! use_embed {
-    ($embed: expr, $base_embed: expr) => {
+    ($embed:expr, $base_embed:expr) => {
         {
             $embed.clone_from(&$base_embed);
             $embed
         }
     };
-    ($embed: expr, $base_embed: expr, $code: block) => {
+    ($embed:expr, $base_embed:expr, $code:block) => {
         {
             $embed.clone_from(&$base_embed);
             $code
@@ -60,32 +60,29 @@ macro_rules! use_embed {
 /// Generate the base of any embed
 #[macro_export]
 macro_rules! generate_embed {
-    ($ctx: expr) => {
+    ($ctx:expr) => {
         $crate::embed::generate_embed(
             $ctx.author(),
             $ctx.author_member().await,
             $crate::embed::colours::Default,
+            None,
         )
     };
-    ($ctx: expr, $colour: ident) => {
+    ($ctx:expr, $colour:ident) => {
         $crate::embed::generate_embed(
             $ctx.author(),
             $ctx.author_member().await,
             $crate::embed::colours::$colour,
+            None,
         )
     };
-    ($ctx: expr, $colour: ident, $guild: expr) => {{
+    ($ctx:expr, $colour:ident, $guild:expr) => {{
         let mut embed = $crate::embed::generate_embed(
             $ctx.author(),
             $ctx.author_member().await,
             $crate::embed::colours::$colour,
+            if $guild { $ctx.guild() } else { None },
         );
-
-        if $guild {
-            if let Some(url) = $ctx.guild().map(|guild| guild.icon_url()).flatten() {
-                embed.thumbnail(url);
-            }
-        }
 
         embed
     }};

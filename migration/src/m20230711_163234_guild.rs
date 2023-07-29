@@ -9,7 +9,15 @@ create_migration!(
             ColumnDef::new(Guild::Autorole)
                 .boolean()
                 .not_null()
-                .default(Value::Bool(Some(false))),
+                .default(Value::Bool(Some(cfg!(debug_assertions)))),
+        )
+        // are sticky roles enabled?
+        .col(
+            ColumnDef::new(Guild::Sticky)
+                .boolean()
+                .not_null()
+                .default(Value::Bool(Some(cfg!(debug_assertions)))),
         ),
     Autorole,
+    Sticky
 );

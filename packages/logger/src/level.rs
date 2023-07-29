@@ -4,6 +4,7 @@ pub enum LogLevel {
     Error,
     #[cfg(verbose)]
     Command,
+    Debug,
 }
 
 impl ToString for LogLevel {
@@ -14,6 +15,7 @@ impl ToString for LogLevel {
             LogLevel::Error => "ERROR".to_string(),
             #[cfg(verbose)]
             LogLevel::Command => "COMMAND".to_string(),
+            LogLevel::Debug => "DEBUG".to_string(),
         }
     }
 }

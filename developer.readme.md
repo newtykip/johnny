@@ -39,7 +39,9 @@ as development ramps up, we may have a development hub on discord. watch this sp
 
 we use the stable toolchain. please make sure you are not using the nightly toolchain, it will cause us many headaches.
 
-there is a special **dev** compiler feature that you will likely want to have enabled which we do not mention in the [consumer guide](consumer.readme.md). it adds some extra debugging tools to help you develop easier!
+when compiling a debug build of the bot certain things are different to how they will be in release. the differences are as listed below:
+
+- the connected database will be cleared every time the bot is started, whereas it persists in production
 
 ## future ideas
 
@@ -63,6 +65,5 @@ i swear i will move this to trello or smth soon i swear i swear i swear
 - integration with generative ai models
 	- llama2?
 - dockerise
-- sticky roles
 
 <sub>licensed with the <a href="license.md">opinionated queer license v1.1</a> - tl;dr see <a href="https://oql.avris.it/">here</a> :]</sub>

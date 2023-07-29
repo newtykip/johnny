@@ -7,28 +7,36 @@ publish.workspace = true
 version.workspace = true
 
 [features]
-dev = []
 johnny = [
   "dep:johnny",
   "common/johnny",
-  "sqlite",
+  "postgres",
   "verbose",
   "autorole",
   "pride",
+  "sticky",
 ]
 tui = ["dep:tui", "logger/tui"]
 verbose = ["logger/verbose"]
 
 # moderation
 autorole = ["dep:autorole", "db?/autorole"]
-moderation = ["autorole"]
+moderation = ["autorole", "sticky"]
+sticky = ["dep:sticky", "db?/sticky"]
 
 # image
 image = ["pride"]
 pride = ["dep:pride"]
 
 # db
-db = ["dep:db", "dep:migration", "dep:sea-orm", "common/db"]
+db = [
+  "dep:db",
+  "dep:migration",
+  "dep:sea-orm",
+  "dep:futures",
+  "dep:itertools",
+  "common/db",
+]
 mysql = ["db", "sea-orm?/sqlx-mysql"]
 postgres = ["db", "sea-orm?/sqlx-postgres"]
 sqlite = ["db", "sea-orm?/sqlx-sqlite"]
@@ -37,7 +45,9 @@ sqlite = ["db", "sea-orm?/sqlx-sqlite"]
 autorole = { path = "../autorole", optional = true }
 color-eyre = { workspace = true }
 common = { path = "../common" }
-db = { path = "../db", optional = true }
+db = { path = "../db", optional = true, features = ["events"] }
+futures = { version = "0.3.28", optional = true }
+itertools = { version = "0.11.0", optional = true }
 johnny = { path = "../johnny", optional = true }
 logger = { path = "../logger" }
 migration = { path = "../../migration", optional = true }
@@ -45,6 +55,7 @@ poise = { workspace = true }
 pride = { path = "../pride", optional = true }
 sea-orm = { workspace = true, optional = true }
 serde = { workspace = true }
+sticky = { path = "../sticky", optional = true }
 tokio = { workspace = true }
 toml = "0.7.6"
 tui = { path = "../tui", optional = true }

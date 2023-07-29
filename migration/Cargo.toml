@@ -1,8 +1,9 @@
 [package]
-edition = "2021"
+authors.workspace = true
+edition.workspace = true
 name = "migration"
-publish = false
-version = "0.1.0"
+publish.workspace = true
+version.workspace = true
 
 [lib]
 name = "migration"
@@ -10,8 +11,5 @@ path = "src/lib.rs"
 
 [dependencies]
 async-std = { version = "1", features = ["attributes", "tokio1"] }
-once_cell = "1.18.0"
-
-[dependencies.sea-orm-migration]
-features = ["runtime-tokio-rustls", "sqlx-sqlite"]
-version = "0.11.0"
+once_cell = { workspace = true }
+sea-orm-migration = { version = "0.11.0", features = ["runtime-tokio-rustls", "sqlx-sqlite"] }

@@ -8,13 +8,11 @@ use common::Context;
 pub use entry::Entry;
 pub use level::LogLevel;
 use tokio::sync::mpsc;
+#[cfg(tui)]
+use tokio::sync::OnceCell;
 
-cfg_if! {
-    if #[cfg(tui)] {
-        use tokio::sync::OnceCell;
-        pub static SENDER: OnceCell<Sender> = OnceCell::const_new();
-    }
-}
+#[cfg(tui)]
+pub static SENDER: OnceCell<Sender> = OnceCell::const_new();
 
 #[cfg(tui)]
 type Sender = mpsc::Sender<Entry>;
@@ -71,18 +69,18 @@ async fn log(level: LogLevel, components: Vec<Component>, ctx: Option<&Context<'
         channel: ctx.map(|ctx| ctx.channel_id()),
     };
 
-    cfg_if! {
-        if #[cfg(tui)] {
-            let sender = SENDER.get().unwrap().clone();
+    #[cfg(tui)]
+    {
+        let sender = SENDER.get().unwrap().clone();
 
-            sender
-                .send(entry)
-                .await
-                .wrap_err("channel to tui should be open")?;
-        } else {
-            println!("{}", entry.to_string());
-        }
+        sender
+            .send(entry)
+            .await
+            .wrap_err("channel to tui should be open")?;
     }
+
+    #[cfg(not(tui))]
+    println!("{}", entry.to_string());
 
     Ok(())
 }
@@ -117,4 +115,5 @@ generate_macro!(
     info => Info
     warn => Warn
     error => Error
+    debug => Debug
 );

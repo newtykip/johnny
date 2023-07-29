@@ -39,11 +39,11 @@ pub const FEATURES: [&str; {}] = [{}];",
 
     cfg_aliases! {
         johnny: { feature = "johnny" },
-        dev: { feature = "dev" },
         tui: { feature = "tui" },
         verbose: { feature = "verbose" },
         autorole: { feature = "autorole" },
         pride: { feature = "pride" },
+        sticky: { feature = "sticky" },
 
         // db
         db: { feature = "db" },

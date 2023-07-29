@@ -19,3 +19,4 @@ config.toml
 *.sqlite*
 packages/bot/src/build_data.rs
 packages/db/src/entity/*.rs
+docker-compose.yml

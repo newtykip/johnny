@@ -7,12 +7,13 @@ pub static TABLES: Lazy<Vec<TableCreateStatement>> = Lazy::new(|| {
         m20230711_173402_user::TABLE.clone(),
         m20230712_192057_autorole::TABLE.clone(),
         m20230716_231443_member::TABLE.clone(),
+        m20230727_210614_sticky::TABLE.clone(),
     ]
 });
 
 #[macro_export]
 macro_rules! create_migration {
-    ($name: ident, $table: expr, $($element: ident,)*) => {
+    ($name: ident, $table: expr, $($element: ident),*) => {
         use once_cell::sync::Lazy;
 
         #[derive(Iden)]

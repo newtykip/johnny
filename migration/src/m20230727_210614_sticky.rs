@@ -3,36 +3,41 @@ use crate::create_migration;
 use sea_orm_migration::prelude::*;
 
 create_migration!(
-    Member,
+    Sticky,
     Table::create()
         // guild snowflake
-        .col(ColumnDef::new(Member::GuildId).text().not_null())
+        .col(ColumnDef::new(Sticky::GuildId).text().not_null())
         .foreign_key(
             ForeignKey::create()
-                .name("member_guild_id_fk")
-                .from_col(Member::GuildId)
+                .name("sticky_guild_id_fk")
+                .from_col(Sticky::GuildId)
                 .to_tbl(Guild::Table)
                 .to_col(Guild::Id)
                 .on_delete(ForeignKeyAction::Cascade)
         )
         // user snowflake
-        .col(ColumnDef::new(Member::UserId).text().not_null())
+        .col(ColumnDef::new(Sticky::UserId).text().not_null())
         .foreign_key(
             ForeignKey::create()
-                .name("member_user_id_fk")
-                .from_col(Member::UserId)
+                .name("sticky_user_id_fk")
+                .from_col(Sticky::UserId)
                 .to_tbl(User::Table)
                 .to_col(User::Id)
                 .on_delete(ForeignKeyAction::Cascade)
         )
-        // guild and user id must both be unique
+        // todo: make it an array in postgres
+        // role snowflake
+        .col(ColumnDef::new(Sticky::RoleId).text().not_null())
+        // guild, user and role ids must all be unique
         .index(
             Index::create()
-                .name("member_guild_id_user_id_idx")
-                .col(Member::GuildId)
-                .col(Member::UserId)
+                .name("Sticky_guild_id_user_id_idx")
+                .col(Sticky::GuildId)
+                .col(Sticky::UserId)
+                .col(Sticky::RoleId)
                 .unique()
         ),
     GuildId,
-    UserId
+    UserId,
+    RoleId
 );

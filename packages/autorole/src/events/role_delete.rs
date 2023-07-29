@@ -1,11 +1,10 @@
 use common::preludes::event::*;
-use db::entity::autorole;
-use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, ModelTrait, QueryFilter};
+use db::{autorole::*, prelude::*};
 
 pub async fn role_delete(role_id: &RoleId, db: &DatabaseConnection) -> Result<()> {
     // delete the associated autorole document
-    let model = autorole::Entity::find()
-        .filter(autorole::Column::RoleId.eq(role_id.to_string()))
+    let model = Entity::find()
+        .filter(Column::RoleId.eq(role_id.to_string()))
         .one(db)
         .await?;
 

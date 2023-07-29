@@ -41,6 +41,10 @@ rust allows for something called [conditional compilation](https://en.wikipedia.
 			<th>overlay pride flags on images</th>
 		</tr>
 		<tr>
+			<th>sticky</th>
+			<th>make users keep their roles after leaving</th>
+		</tr>
+		<tr>
 			<th>tui</th>
 			<th>replaces the basic logger with a <a href="https://en.wikipedia.org/wiki/Text-based_user_interface">text-based user interface</a> with far more features</th>
 		</tr>
@@ -65,7 +69,7 @@ there are also some core features which enables certain combinations of the feat
 	<tbody>
 		<tr>
 			<th>moderation</th>
-			<th>autorole</th>
+			<th>autorole, sticky</th>
 		</tr>
 		<tr>
 			<th>image</th>

@@ -1,12 +1,11 @@
 use common::preludes::command::*;
-use db::prelude::*;
-use sea_orm::ModelTrait;
+use db::{autorole::*, prelude::*};
 
 async fn autorole_autocomplete(ctx: Context<'_>, partial: &str) -> Vec<AutocompleteChoice<String>> {
     let guild = ctx.guild().unwrap();
 
-    guild
-        .get_all_autoroles(&ctx.data().db)
+    Entity::find()
+        .all(&ctx.data().db)
         .await
         .unwrap()
         .iter()
@@ -40,7 +39,7 @@ pub async fn remove(
     // get the autorole
     let db = &ctx.data().db;
     let guild = ctx.guild().unwrap();
-    let autorole = guild.get_autorole(db, autorole_id).await?.unwrap();
+    let autorole = find_one!(autorole, db, autorole_id)?;
 
     // delete it
     autorole.clone().delete(db).await?;

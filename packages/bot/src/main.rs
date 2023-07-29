@@ -27,11 +27,11 @@ use std::{fs::File, path::Path};
 use tokio::sync::mpsc;
 
 // ensure that only one of the database drivers have been enabled
-#[cfg(all(multiple_db, not(dev)))]
+#[cfg(all(multiple_db, not(debug_assertions)))]
 compile_error!("please choose only one of \"postgres\", \"mysql\" or \"sqlite\"");
 
 // ensure that a db driver has been selected alongside any features that require a db
-#[cfg(all(autorole, not(db)))]
+#[cfg(all(autorole, not(debug_assertions)))]
 compile_error!("please choose one of \"postgres\", \"mysql\", or \"sqlite\", you need one of them enabled for autorole to work");
 
 async fn start_bot(framework: Arc<Framework<Data, Error>>) -> Result<()> {
@@ -74,21 +74,19 @@ async fn main() -> Result<()> {
     let db = Database::connect(config.database.url).await?;
 
     // apply new migrations on stable
-    #[cfg(all(db, not(dev)))]
+    #[cfg(all(db, not(debug_assertions)))]
     Migrator::up(&db, None).await?;
 
     // reset database when dev
-    #[cfg(all(db, dev))]
+    #[cfg(all(db, debug_assertions))]
     Migrator::refresh(&db).await?;
 
     // build intents
     #[allow(unused_mut)]
     let mut intents = GatewayIntents::non_privileged();
 
-    cfg_if! {
-        if #[cfg(autorole)] {
-            intents |= GatewayIntents::GUILD_MEMBERS;
-        }
+    if cfg!(any(autorole, sticky)) {
+        intents |= GatewayIntents::GUILD_MEMBERS;
     }
 
     // build command list
@@ -97,6 +95,9 @@ async fn main() -> Result<()> {
 
     #[cfg(autorole)]
     commands.push(autorole::autorole());
+
+    #[cfg(sticky)]
+    commands.push(sticky::sticky());
 
     #[cfg(pride)]
     commands.push(pride::pride());
@@ -140,19 +141,21 @@ async fn main() -> Result<()> {
         .await?;
 
     // spawn the bot
-    cfg_if! {
-        if #[cfg(tui)] {
-            tokio::spawn(async move { start_bot(framework).await.unwrap() });
+    #[cfg(tui)]
+    {
+        tokio::spawn(async move { start_bot(framework).await.unwrap() });
 
-            // tui
-            let channels = mpsc::channel(100);
-            SENDER.get_or_init(|| async { channels.0 }).await;
+        // tui
+        let channels = mpsc::channel(100);
+        SENDER.get_or_init(|| async { channels.0 }).await;
 
-            tui::prelude(channels.1)?;
-        } else {
-            start_bot(framework).await?;
-            loop {}
-        }
+        tui::prelude(channels.1)?;
+    }
+
+    #[cfg(not(tui))]
+    {
+        start_bot(framework).await?;
+        loop {}
     }
 
     #[allow(unreachable_code)]

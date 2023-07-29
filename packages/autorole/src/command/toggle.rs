@@ -1,7 +1,7 @@
 use common::preludes::command::*;
 use db::prelude::*;
 
-/// Toggle autorole on or off
+/// Toggle autorole on and off
 #[command(
     slash_command,
     category = "moderation",
@@ -11,14 +11,12 @@ use db::prelude::*;
 pub async fn toggle(ctx: Context<'_>) -> Result<()> {
     ctx.defer_ephemeral().await?;
 
+    let db = &ctx.data().db;
     let guild = ctx.guild().unwrap();
-    let model = guild
-        .update_db(&ctx.data().db, |model| {
-            model.autorole = Set(!model.autorole.take().unwrap());
-            model
-        })
-        .await?
-        .unwrap();
+    let model = {
+        let temp = find_one!(guild, db, guild.id)?;
+        update!(temp, db, autorole => !temp.autorole)?
+    };
 
     // create the embed
     let mut base_embed = if model.autorole {

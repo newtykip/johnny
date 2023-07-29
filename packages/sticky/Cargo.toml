@@ -1,0 +1,14 @@
+[package]
+authors.workspace = true
+edition.workspace = true
+name = "sticky"
+publish.workspace = true
+version.workspace = true
+
+[features]
+
+[dependencies]
+common = { path = "../common" }
+db = { path = "../db", features = ["sticky"] }
+poise = { workspace = true }
+sea-orm = { workspace = true }

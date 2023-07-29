@@ -2,10 +2,11 @@ pub use helpers::TABLES;
 pub use sea_orm_migration::prelude::*;
 
 mod helpers;
-pub mod m20230711_163234_guild;
-pub mod m20230711_173402_user;
-pub mod m20230712_192057_autorole;
-pub mod m20230716_231443_member;
+mod m20230711_163234_guild;
+mod m20230711_173402_user;
+mod m20230712_192057_autorole;
+mod m20230716_231443_member;
+mod m20230727_210614_sticky;
 
 pub struct Migrator;
 
@@ -17,6 +18,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20230711_173402_user::Migration),
             Box::new(m20230712_192057_autorole::Migration),
             Box::new(m20230716_231443_member::Migration),
+            Box::new(m20230727_210614_sticky::Migration),
         ]
     }
 }

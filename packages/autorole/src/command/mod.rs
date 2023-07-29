@@ -1,6 +1,6 @@
 use common::{load_command, preludes::command::*};
 
-load_command!(toggle add remove);
+load_command!(toggle, add, remove);
 
 /// Modify current autorole settings
 #[command(

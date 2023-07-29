@@ -1,5 +1,5 @@
 use crate::determine_avatar;
-use poise::serenity_prelude::{Member, User};
+use poise::serenity_prelude::{Guild, Member, User};
 use serenity::{builder::CreateEmbed, utils::Colour};
 use std::borrow::Cow;
 
@@ -12,7 +12,12 @@ pub mod colours {
     pub const Failure: Colour = Colour::from_rgb(255, 171, 171);
 }
 
-pub fn generate_embed(user: &User, member: Option<Cow<'_, Member>>, colour: Colour) -> CreateEmbed {
+pub fn generate_embed(
+    user: &User,
+    member: Option<Cow<'_, Member>>,
+    colour: Colour,
+    guild: Option<Guild>,
+) -> CreateEmbed {
     let mut embed = CreateEmbed::default();
 
     let name = match &member {
@@ -21,6 +26,10 @@ pub fn generate_embed(user: &User, member: Option<Cow<'_, Member>>, colour: Colo
     };
 
     let avatar = determine_avatar(user, member);
+
+    if let Some(url) = guild.map(|g| g.icon_url()).flatten() {
+        embed.thumbnail(url);
+    }
 
     embed
         .author(|author| author.name(name).icon_url(avatar))

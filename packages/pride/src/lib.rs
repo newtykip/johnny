@@ -3,7 +3,7 @@ use image::{load_from_memory, DynamicImage, ImageError};
 use pride_overlay::Flags;
 use strum::IntoEnumIterator;
 
-load_command!(circle overlay);
+load_command!(circle, overlay);
 
 async fn fetch_image(
     ctx: &Context<'_>,
