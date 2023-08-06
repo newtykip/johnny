@@ -4,7 +4,7 @@
 		"scope": "rust",
 		"prefix": "cmd",
 		"body": [
-			"use common::preludes::command::*;",
+			"use common::command::*;",
 			"",
 			"/// $3",
 			"#[command(slash_command, category = \"$2\")]",

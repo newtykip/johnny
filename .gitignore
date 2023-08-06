@@ -15,8 +15,6 @@ Cargo.lock
 
 # other
 config.toml
-./johnny
 *.sqlite*
 packages/bot/src/build_data.rs
-packages/db/src/entity/*.rs
 docker-compose.yml

@@ -1,6 +1,6 @@
 use super::log::State as LogState;
+use crate::prelude::*;
 use crate::{helpers::generate_controls, App, Views};
-use common::preludes::tui::*;
 
 // todo: dump logs to a file
 // todo: search logs

@@ -9,6 +9,4 @@ version.workspace = true
 
 [dependencies]
 common = { path = "../common" }
-db = { path = "../db" }
 poise = { workspace = true }
-sea-orm = { workspace = true }

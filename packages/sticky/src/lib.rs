@@ -1,49 +1,39 @@
 pub mod events;
 
-use common::preludes::command::*;
-use db::{prelude::*, sticky};
+use common::command::*;
+use common::db::prelude::*;
 
 /// Toggle sticky roles on and off
 #[command(slash_command, category = "moderation", guild_only)]
 pub async fn toggle(ctx: Context<'_>) -> Result<()> {
     ctx.defer_ephemeral().await?;
 
-    let db = &ctx.data().db;
+    let pool = &ctx.data().pool;
     let guild = ctx.guild().unwrap();
 
-    // enable sticky roles
-    let model = {
-        let temp = find_one!(guild, db, guild.id)?;
-        update!(temp, db, sticky => !temp.sticky)?
-    };
+    // toggle sticky roles
+    let model = select!(Guild, pool, Id | guild.id.to_string()).unwrap();
+    let sticky = !model.sticky;
+
+    update!(Guild, pool, Id | guild.id.to_string(); Sticky => sticky)?;
 
     // if sticky roles has been turned off, remove all sticky role records
-    if !model.sticky {
-        for sticky in sticky::Entity::find()
-            .filter(sticky::Column::GuildId.eq(guild.id.to_string()))
-            .all(db)
-            .await?
-        {
-            sticky.delete(db).await?;
-        }
+    if sticky {
+        delete!(Sticky, pool, GuildId | guild.id.to_string())?;
     }
 
     // create the embed
-    let mut base_embed = if model.sticky {
+    let mut base_embed = if sticky {
         generate_embed!(ctx, Success, true)
     } else {
         generate_embed!(ctx, Failure, true)
     };
 
     base_embed
-        .title(if model.sticky {
-            "Enabled!"
-        } else {
-            "Disabled!"
-        })
+        .title(if sticky { "Enabled!" } else { "Disabled!" })
         .description(format!(
             "Sticky roles have been {}!",
-            if model.sticky { "enabled" } else { "disabled" }
+            if sticky { "enabled" } else { "disabled" }
         ));
 
     // announce the toggle

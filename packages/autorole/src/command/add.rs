@@ -1,5 +1,5 @@
-use common::preludes::command::*;
-use db::{autorole::*, prelude::*};
+use common::command::*;
+use common::db::prelude::*;
 
 async fn role_autocomplete(ctx: Context<'_>, partial: &str) -> Vec<AutocompleteChoice<String>> {
     ctx.guild()
@@ -35,24 +35,7 @@ pub async fn add(
 
     let guild = ctx.guild().unwrap();
     let role = guild.roles.get(&RoleId(role_id.parse()?)).unwrap();
-
-    // create the autorole entry
-    let entry = ActiveModel {
-        id: Set(generate_id()),
-        guild_id: Set(guild.id.to_string()),
-        role_id: Set(role.id.to_string()),
-    }
-    .insert(&ctx.data().db)
-    .await;
-
-    if let Err(err) = entry {
-        println!("{:?}", err);
-        return Err(eyre!(
-            "Failed to create autorole entry, are you sure it doesn't already exist?"
-        ));
-    } else {
-        entry?;
-    }
+    insert!(Autorole, &ctx.data().pool, Id => generate_id(), GuildId => guild.id.to_string(), RoleId => role.id.to_string())?;
 
     // create the embed
     let mut base_embed = generate_embed!(ctx, Success, true);

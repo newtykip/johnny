@@ -4,27 +4,28 @@ mod config;
 mod errors;
 mod events;
 
-use common::prelude::*;
-use common::Data;
+use common::{prelude::*, Data};
 use config::Config;
 use errors::error_handler;
 use events::event_handler;
 #[cfg(johnny)]
 use johnny::fetch_images;
-#[cfg(tui)]
-use logger::SENDER;
-#[cfg(db)]
-use migration::{Migrator, MigratorTrait};
-use poise::samples::register_globally;
-use poise::serenity_prelude::GatewayIntents;
-use poise::{Framework, FrameworkOptions};
-#[cfg(db)]
-use sea_orm::Database;
+use poise::{
+    samples::register_globally, serenity_prelude::GatewayIntents, Framework, FrameworkOptions,
+};
 use std::sync::Arc;
 #[cfg(sqlite)]
 use std::{fs::File, path::Path};
+#[cfg(db)]
+use {
+    common::db::{
+        migrate::migrate,
+        prelude::{generate_id, insert, select, Pool, SqlxBinder},
+    },
+    std::collections::HashSet,
+};
 #[cfg(tui)]
-use tokio::sync::mpsc;
+use {logger::SENDER, tokio::sync::mpsc};
 
 // ensure that only one of the database drivers have been enabled
 #[cfg(all(multiple_db, not(debug_assertions)))]
@@ -49,37 +50,29 @@ async fn main() -> Result<()> {
     // load the config
     let config = Config::load()?;
 
-    // ensure sqlite file exists
+    // create the sqlite file if it doesn't exist
     #[cfg(sqlite)]
     {
         let path = config
             .database
             .url
-            .split("://")
-            .last()
-            .wrap_err("connection url must be valid")?;
+            .split("sqlite://")
+            .skip(1)
+            .next()
+            .unwrap();
 
-        // allow in-memory databases (although these are absolutely NOT recommended)
-        if path != ":memory:" {
-            let path = Path::new(path);
-
-            if !path.exists() {
-                File::create(path)?;
-            }
+        if !Path::new(&path).exists() {
+            File::create(path)?;
         }
     }
 
+    // run migrations
+    #[cfg(db)]
+    migrate(config.database.url.clone())?;
+
     // connect to the database
     #[cfg(db)]
-    let db = Database::connect(config.database.url).await?;
-
-    // apply new migrations on stable
-    #[cfg(all(db, not(debug_assertions)))]
-    Migrator::up(&db, None).await?;
-
-    // reset database when dev
-    #[cfg(all(db, debug_assertions))]
-    Migrator::refresh(&db).await?;
+    let pool = Pool::connect(&config.database.url).await?;
 
     // build intents
     #[allow(unused_mut)]
@@ -113,6 +106,49 @@ async fn main() -> Result<()> {
                 })
             },
             on_error: |error| Box::pin(async move { error_handler(error).await }),
+            #[cfg(db)]
+            pre_command: |ctx| {
+                Box::pin(async move {
+                    let data = ctx.data();
+                    let user_id = ctx.author().id;
+
+                    // is the user in the cache? if so, return
+                    if data.user_cache.contains(&user_id.0) {
+                        return ();
+                    }
+
+                    // is the user in the database? if not, insert them
+                    if select!(User, &ctx.data().pool, Id | user_id.to_string()).is_none() {
+                        insert!(User, &ctx.data().pool, Id => user_id.to_string()).unwrap();
+                    }
+
+                    if let Some(guild_id) = ctx.guild_id() {
+                        // is the member in the cache? if so, return
+                        if data.member_cache.contains(&(guild_id.0, user_id.0)) {
+                            return ();
+                        }
+
+                        // is the member in the database? if not, insert them
+                        if select!(
+                            Member,
+                            &ctx.data().pool,
+                            UserId | user_id.to_string(),
+                            GuildId | guild_id.to_string()
+                        )
+                        .is_none()
+                        {
+                            insert!(
+                                Member,
+                                &ctx.data().pool,
+                                Id => generate_id(),
+                                UserId => user_id.to_string(),
+                                GuildId => guild_id.to_string()
+                            )
+                            .unwrap();
+                        }
+                    }
+                })
+            },
             #[cfg(verbose)]
             post_command: |ctx| {
                 Box::pin(async move {
@@ -130,7 +166,11 @@ async fn main() -> Result<()> {
                     #[cfg(johnny)]
                     johnny_images: fetch_images(&config.johnny.imgur).await?,
                     #[cfg(db)]
-                    db,
+                    pool,
+                    #[cfg(db)]
+                    user_cache: HashSet::new(),
+                    #[cfg(db)]
+                    member_cache: HashSet::new(),
                 })
             })
         })

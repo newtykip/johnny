@@ -1,4 +1,4 @@
-use common::preludes::tui::*;
+use crate::prelude::*;
 
 pub fn generate_controls(text: &str) -> Paragraph {
     Paragraph::new(format!("{}, q to quit", text)).style(

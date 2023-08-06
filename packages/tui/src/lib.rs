@@ -1,12 +1,13 @@
 mod helpers;
+mod prelude;
 mod views;
 
-use common::preludes::tui::*;
 use crossterm::{
     event::{self, Event},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
+use prelude::*;
 use ratatui::{backend::CrosstermBackend, Terminal};
 use std::{
     io::stdout,

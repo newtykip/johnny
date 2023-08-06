@@ -2,8 +2,8 @@ pub use color_eyre::{
     eyre::{eyre, Context as EyreContext, ContextCompat, Error, Result},
     Help,
 };
-pub use poise::serenity_prelude::*;
 pub use rayon::prelude::*;
+pub use serenity::model::prelude::*;
 
 pub trait IsEveryone {
     /// check if a role is the @everyone role

@@ -1,23 +1,40 @@
+#[path = "preludes/command.rs"]
+pub mod command;
+#[cfg(db)]
+pub mod db;
 pub mod embed;
+#[path = "preludes/event.rs"]
+pub mod event;
 mod macros;
 pub mod prelude;
-pub mod preludes;
 
 use color_eyre::eyre::Error;
 use poise::serenity_prelude::{Member, User};
-#[cfg(db)]
-use sea_orm::DatabaseConnection;
 use std::borrow::Cow;
+#[cfg(db)]
+use {
+    db::DB,
+    sqlx::{Database, Pool},
+    std::collections::HashSet,
+};
 
 /// command context
+#[cfg(db)]
+pub type Context<'a> = poise::Context<'a, Data<DB>, Error>;
+#[cfg(not(db))]
 pub type Context<'a> = poise::Context<'a, Data, Error>;
 
 /// poise framework data
-pub struct Data {
+pub struct Data<#[cfg(db)] D: Database = DB> {
     #[cfg(johnny)]
     pub johnny_images: Vec<String>,
     #[cfg(db)]
-    pub db: DatabaseConnection,
+    pub pool: Pool<D>,
+    #[cfg(db)]
+    pub user_cache: HashSet<u64>,
+    /// guild id, user id
+    #[cfg(db)]
+    pub member_cache: HashSet<(u64, u64)>,
 }
 
 /// bot epoch timestamp

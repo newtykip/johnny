@@ -1,9 +1,9 @@
 use super::main::State as MainState;
+use crate::prelude::*;
 use crate::{
     helpers::{generate_button, generate_controls},
     App, Views,
 };
-use common::preludes::tui::*;
 
 #[derive(Default)]
 pub struct State {

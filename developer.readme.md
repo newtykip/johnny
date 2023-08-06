@@ -10,7 +10,6 @@ i am grateful that you are considering helping out, it really does mean a lot! j
 
 - [just](https://github.com/casey/just) - a task runner
 - [taplo](https://github.com/tamasfe/taplo) - a [toml](https://en.wikipedia.org/wiki/TOML) toolkit, formats all of the toml files
-- [sea-orm-cli](https://github.com/SeaQL/sea-orm/tree/master/sea-orm-cli) - cli to generate files related to [sea-orm](https://github.com/SeaQL/sea-orm), the [ORM](https://en.wikipedia.org/wiki/Object%E2%80%93relational_mapping) we use
 - [cargo-generate](https://github.com/cargo-generate/cargo-generate) - scaffolding tool for new packages
 - [cargo-all-features](https://github.com/frewsxcv/cargo-all-features) - build/test all feature flag combinations
 - [cargo-clean-recursive](https://crates.io/crates/cargo-clean-recursive) - clean target directories recursively
@@ -18,7 +17,7 @@ i am grateful that you are considering helping out, it really does mean a lot! j
 You can install all of the above using the following command:
 
 ```
-cargo install just taplo-cli sea-orm-cli cargo-generate cargo-all-features
+cargo install just taplo-cli cargo-generate cargo-all-features
 ```
 
 All workflows are defined in our [justfile](justfile) and each task can be run using `just <task>`. All available tasks are documented below.
@@ -26,7 +25,6 @@ All workflows are defined in our [justfile](justfile) and each task can be run u
 - **clean** - cleans all target directories recursively
 - **format** - formats all code using rustfmt, and toml files using taplo
 - **new-package** - generates a new package using the [template](template)
-- **new-migration \<name\>** - generates a new database migration
 - **build-all** - build every feature combination
 
 ## our community
@@ -59,7 +57,10 @@ i swear i will move this to trello or smth soon i swear i swear i swear
 			- skyblock
 		- server scanner
 			- allow guilds to have their own minecraft server
+			    - statistic tracking (maybe through voice channel names?)
 		- integration with discordsrv? or maybe my our version of it...
+		- pixel art generator
+		    - use my new side project [mcpixel](https://github.com/newtykins/mcpixel)
 - configuration through the tui
 - web dashboard (please if you have any skill in this department hmu because i am miserable on the front-end)
 - integration with generative ai models

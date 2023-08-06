@@ -1,4 +1,4 @@
-use common::{load_command, preludes::command::*};
+use common::{command::*, load_command};
 
 load_command!(toggle, add, remove);
 

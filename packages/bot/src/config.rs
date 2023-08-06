@@ -2,7 +2,6 @@ use common::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::fs::read_to_string;
 
-#[cfg(db)]
 #[derive(Serialize, Deserialize)]
 pub struct DatabaseConfig {
     pub url: String,

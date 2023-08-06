@@ -1,16 +1,7 @@
-use common::preludes::event::*;
-use db::{autorole::*, prelude::*};
+use common::db::prelude::*;
 
-pub async fn role_delete(role_id: &RoleId, db: &DatabaseConnection) -> Result<()> {
+pub async fn role_delete(role_id: &RoleId, pool: &Pool) -> Result<()> {
     // delete the associated autorole document
-    let model = Entity::find()
-        .filter(Column::RoleId.eq(role_id.to_string()))
-        .one(db)
-        .await?;
-
-    if let Some(model) = model {
-        model.delete(db).await?;
-    }
-
+    delete!(Autorole, pool, RoleId | role_id.to_string())?;
     Ok(())
 }

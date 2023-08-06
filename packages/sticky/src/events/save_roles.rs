@@ -1,29 +1,23 @@
-use common::preludes::event::*;
-use db::{generate_id, guild, prelude::*, sticky};
+use common::db::prelude::*;
 
 // todo: only on sticky
 // todo: fix
-pub async fn save_roles(member: &Member, db: &DatabaseConnection) -> Result<()> {
-    let sticky = guild::Entity::find_by_id(member.guild_id.to_string())
-        .one(db)
-        .await?
-        .map(|g| g.sticky)
-        .unwrap_or(false);
+pub async fn save_roles(member: &Member, pool: &Pool) -> Result<()> {
+    let guild = select!(Guild, pool, Id | member.guild_id.to_string()).unwrap();
 
-    if sticky {
-        let models = member
+    if guild.sticky {
+        // collect data
+        let ids = vec![generate_id(); member.roles.len()];
+        let guild_ids = vec![member.guild_id.to_string(); member.roles.len()];
+        let user_ids = vec![member.user.id.to_string(); member.roles.len()];
+        let role_ids = member
             .roles
-            .par_iter()
-            .map(|role_id| sticky::ActiveModel {
-                id: Set(generate_id()),
-                guild_id: Set(member.guild_id.to_string()),
-                user_id: Set(member.user.id.to_string()),
-                role_id: Set(role_id.to_string()),
-                ..Default::default()
-            })
+            .iter()
+            .map(|x| x.to_string())
             .collect::<Vec<_>>();
 
-        sticky::Entity::insert_many(models).exec(db).await?;
+        // insert it
+        insert!(Many, Sticky, pool, Id => ids, GuildId => guild_ids, UserId => user_ids, RoleId => role_ids)?;
     }
 
     Ok(())

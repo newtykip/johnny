@@ -1,5 +1,5 @@
 use crate::Reactions;
-use common::preludes::event::*;
+use common::event::*;
 use poise::serenity_prelude::{Context, GuildChannel};
 
 pub async fn suggestion(ctx: &Context, thread: &GuildChannel) -> Result<()> {

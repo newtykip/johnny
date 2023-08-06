@@ -8,7 +8,8 @@ pub async fn event_handler(
     #[allow(unused_variables)] ctx: &Context,
     #[allow(unused_variables)] data: &Data,
 ) -> Result<()> {
-    let db = &data.db;
+    #[cfg(db)]
+    let db = &data.pool;
 
     match event {
         // ready
@@ -17,8 +18,6 @@ pub async fn event_handler(
                 #[cfg(any(johnny, db))]
                 ctx,
                 data_about_bot,
-                #[cfg(db)]
-                db,
             )
             .await
         }
@@ -49,8 +48,11 @@ pub async fn event_handler(
             )
             .await?;
 
-            db::events::create_user(&new_member.user, db).await?;
-            db::events::create_member(new_member, db).await?;
+            #[cfg(db)]
+            {
+                common::db::events::create_user(&new_member.user, db).await?;
+                common::db::events::create_member(new_member, db).await?;
+            }
 
             #[cfg(autorole)]
             autorole::events::apply_role(ctx, new_member, db).await?;
@@ -63,6 +65,7 @@ pub async fn event_handler(
 
         // member leave
         Event::GuildMemberRemoval {
+            #[cfg(db)]
             member_data_if_available,
             user,
             #[cfg(debug_assertions)]
@@ -80,33 +83,52 @@ pub async fn event_handler(
             )
             .await?;
 
+            #[cfg(db)]
             if let Some(member) = member_data_if_available {
-                db::events::remove_member(member, db).await?;
+                common::db::events::remove_member(member, db).await?;
 
                 #[cfg(sticky)]
                 sticky::events::save_roles(member, db).await?;
             }
 
-            db::events::remove_user(user, db).await?;
+            #[cfg(db)]
+            common::db::events::remove_user(user, db).await?;
 
             Ok(())
         }
 
         // guild create
-        Event::GuildCreate { guild, .. } => db::events::create_guild(guild, db).await,
+        Event::GuildCreate {
+            #[cfg(db)]
+            guild,
+            ..
+        } => {
+            #[cfg(db)]
+            common::db::events::create_guild(guild, db).await?;
+
+            Ok(())
+        }
 
         // guild delete
-        Event::GuildDelete { incomplete, .. } => db::events::remove_guild(incomplete, db).await,
+        Event::GuildDelete {
+            #[cfg(db)]
+            incomplete,
+            ..
+        } => {
+            #[cfg(db)]
+            common::db::events::remove_guild(incomplete, db).await?;
+
+            Ok(())
+        }
 
         // role delete
         #[cfg(autorole)]
         Event::GuildRoleDelete {
             removed_role_id, ..
-        } => autorole::events::role_delete(removed_role_id, db).await,
-
-        Event::GuildMembersChunk { chunk } => {
-            println!("{:?}", chunk);
-            Ok(())
+        } =>
+        {
+            #[cfg(db)]
+            autorole::events::role_delete(removed_role_id, db).await
         }
 
         _ => Ok(()),

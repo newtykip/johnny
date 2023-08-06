@@ -2,6 +2,8 @@ use cfg_aliases::cfg_aliases;
 use rayon::prelude::*;
 use std::{env, error::Error, fs::File, io::Write};
 
+// ? can i do migrations in the build script?
+
 /// All features that should not be shown in the build_data.rs file
 const HIDDEN_FEATURES: [&str; 2] = ["default", "db"];
 
@@ -19,7 +21,9 @@ fn main() -> Result<(), Box<dyn Error>> {
         .filter(|k| !HIDDEN_FEATURES.contains(&k.as_str()))
         .collect();
 
-    println!("cargo:warning=enabled features: {}", features.join(", "));
+    if !features.is_empty() {
+        println!("cargo:warning=enabled features: {}", features.join(", "));
+    }
 
     // save all of this information in in build_data.rs
     let mut file = File::create("src/build_data.rs")?;
@@ -47,6 +51,8 @@ pub const FEATURES: [&str; {}] = [{}];",
 
         // db
         db: { feature = "db" },
+        mysql: { feature = "mysql" },
+        postgres: { feature = "postgres" },
         sqlite: { feature = "sqlite" },
         multiple_db: { any(all(feature = "postgres", feature = "mysql"), all(feature = "mysql", feature = "sqlite"), all(feature = "postgres", feature = "sqlite"), all(feature = "postgres", feature = "mysql", feature = "sqlite")) }
     }

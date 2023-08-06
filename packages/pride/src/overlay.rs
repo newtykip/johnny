@@ -1,5 +1,5 @@
 use super::{fetch_image, flag_autocomplete};
-use common::preludes::command::*;
+use common::command::*;
 use pride_overlay::{overlay as overlay_pride, Flags, Opacity};
 use std::{borrow::Cow, io::Cursor, str::FromStr};
 

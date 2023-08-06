@@ -1,4 +1,4 @@
-use common::preludes::command::*;
+use common::command::*;
 #[cfg(johnny)]
 use johnny::johnny_image;
 

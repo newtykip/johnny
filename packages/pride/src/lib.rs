@@ -1,4 +1,4 @@
-use common::{determine_avatar, load_command, preludes::command::*};
+use common::{command::*, determine_avatar, load_command};
 use image::{load_from_memory, DynamicImage, ImageError};
 use pride_overlay::Flags;
 use strum::IntoEnumIterator;

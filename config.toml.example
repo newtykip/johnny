@@ -1,7 +1,7 @@
 token = "" # your discord bot token
 
 # remove if a database driver is not enabled
-[databases]
+[database]
 url = "" # the connection url for your database
 
 # remove if johnny feature is not enabled

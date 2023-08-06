@@ -4,7 +4,7 @@
 		"scope": "rust",
 		"prefix": "event",
 		"body": [
-			"use common::preludes::event::*;",
+			"use common::event::*;",
 			"",
 			"pub async fn $1($2) -> Result<()> {",
 			"    Ok(())",

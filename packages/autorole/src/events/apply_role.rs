@@ -1,15 +1,15 @@
+use common::db::prelude::*;
+use common::event::*;
 use std::collections::HashSet;
 
-use common::preludes::event::*;
-use db::{autorole::*, prelude::*};
-use sea_orm::DatabaseConnection;
+pub async fn apply_role(ctx: &Context, member: &mut Member, pool: &Pool) -> Result<()> {
+    let guild = select!(Guild, pool, Id | member.guild_id.to_string()).unwrap();
 
-pub async fn apply_role(ctx: &Context, member: &mut Member, db: &DatabaseConnection) -> Result<()> {
-    if let Some(guild) = member.guild_id.db(db).await? {
-        if guild.autorole {
-            let roles = Entity::find()
-                .all(db)
-                .await?
+    if guild.autorole {
+        if let Some(autoroles) =
+            select!(Many, Autorole, pool, GuildId | member.guild_id.to_string())
+        {
+            let roles = autoroles
                 .iter()
                 .map(|x| RoleId(x.role_id.parse().unwrap()))
                 .collect::<HashSet<_>>();
