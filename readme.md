@@ -1,5 +1,5 @@
 <div align="center">
-<img src="assets/johnny.png" height="250">
+<img src="assets/readme/main.png" height="250">
 <h3>johnny</h3>
 the least bloated all-in-one bot on discord<br/><br/>
 </div>

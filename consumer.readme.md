@@ -1,5 +1,5 @@
 <div align="center">
-<img src="assets/consumer.jpg" height="250">
+<img src="assets/readme/consumer.jpg" height="250">
 <h3>johnny consumer guide</h3>
 thank you for showing interest in johnny (:<br/><br/>
 </div>

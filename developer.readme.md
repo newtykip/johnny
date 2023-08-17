@@ -1,5 +1,5 @@
 <div align="center">
-<img src="assets/developer.jpg" height="250">
+<img src="assets/readme/developer.jpg" height="250">
 <h3>johnny developer guide</h3>
 thank you for showing interest in contributing (:<br/><br/>
 </div>
@@ -61,6 +61,10 @@ i swear i will move this to trello or smth soon i swear i swear i swear
 		- integration with discordsrv? or maybe my our version of it...
 		- pixel art generator
 		    - use my new side project [mcpixel](https://github.com/newtykins/mcpixel)
+	- cards against humanity
+		- restrict to nsfw channels
+		- move splitter to build script?
+		- redis for game sessions
 - configuration through the tui
 - web dashboard (please if you have any skill in this department hmu because i am miserable on the front-end)
 - integration with generative ai models
