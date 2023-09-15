@@ -59,16 +59,12 @@ i swear i will move this to trello or smth soon i swear i swear i swear
 			- allow guilds to have their own minecraft server
 			    - statistic tracking (maybe through voice channel names?)
 		- integration with discordsrv? or maybe my our version of it...
-		- pixel art generator
-		    - use my new side project [mcpixel](https://github.com/newtykins/mcpixel)
 	- cards against humanity
 		- restrict to nsfw channels
 		- move splitter to build script?
 		- redis for game sessions
 - configuration through the tui
 - web dashboard (please if you have any skill in this department hmu because i am miserable on the front-end)
-- integration with generative ai models
-	- llama2?
 - dockerise
 
 <sub>licensed with the <a href="license.md">opinionated queer license v1.1</a> - tl;dr see <a href="https://oql.avris.it/">here</a> :]</sub>

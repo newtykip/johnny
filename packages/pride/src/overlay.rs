@@ -4,7 +4,7 @@ use pride_overlay::{overlay as overlay_pride, Flags, Opacity};
 use std::{borrow::Cow, io::Cursor, str::FromStr};
 
 /// Overlay a pride flag on an image
-#[command(slash_command)]
+#[command(slash_command, category = "image")]
 pub async fn overlay(
     ctx: Context<'_>,
     #[description = "The flag to use"]

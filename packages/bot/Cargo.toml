@@ -7,7 +7,7 @@ publish.workspace = true
 version.workspace = true
 
 [features]
-johnny = ["dep:johnny", "common/johnny", "sqlite", "verbose", "autorole", "pride", "sticky"]
+johnny = ["dep:johnny", "common/johnny", "sqlite", "verbose", "autorole", "pride", "sticky", "minecraft"]
 tui = ["dep:tui", "logger/tui"]
 verbose = ["logger/verbose"]
 
@@ -19,6 +19,10 @@ sticky = ["dep:sticky", "common/sticky"]
 # image
 image = ["pride"]
 pride = ["dep:pride"]
+
+# games
+games = ["minecraft"]
+minecraft = ["dep:minecraft"]
 
 # db
 db = ["common/db-events", "dep:sqlx"]
@@ -40,6 +44,7 @@ sticky = { path = "../sticky", optional = true }
 tokio = { workspace = true }
 toml = "0.7.6"
 tui = { path = "../tui", optional = true }
+minecraft = { path = "../minecraft", optional = true }
 
 [build-dependencies]
 cfg_aliases = { workspace = true }

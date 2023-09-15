@@ -8,6 +8,7 @@ members = [
   "packages/logger",
   "packages/pride",
   "packages/tui",
+  "packages/minecraft"
 ]
 
 [workspace.package]

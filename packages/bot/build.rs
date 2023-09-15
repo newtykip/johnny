@@ -5,7 +5,7 @@ use std::{env, error::Error, fs::File, io::Write};
 // ? can i do migrations in the build script?
 
 /// All features that should not be shown in the build_data.rs file
-const HIDDEN_FEATURES: [&str; 2] = ["default", "db"];
+const HIDDEN_FEATURES: [&str; 6] = ["default", "db", "moderation", "image", "games", "mc_base"];
 
 fn main() -> Result<(), Box<dyn Error>> {
     // figure out enabled features
@@ -45,15 +45,23 @@ pub const FEATURES: [&str; {}] = [{}];",
         johnny: { feature = "johnny" },
         tui: { feature = "tui" },
         verbose: { feature = "verbose" },
+
+        // moderation
         autorole: { feature = "autorole" },
-        pride: { feature = "pride" },
         sticky: { feature = "sticky" },
+
+        // image
+        pride: { feature = "pride" },
+
+        // games
+        minecraft: { feature = "minecraft" },
 
         // db
         db: { feature = "db" },
         mysql: { feature = "mysql" },
         postgres: { feature = "postgres" },
         sqlite: { feature = "sqlite" },
+
         multiple_db: { any(all(feature = "postgres", feature = "mysql"), all(feature = "mysql", feature = "sqlite"), all(feature = "postgres", feature = "sqlite"), all(feature = "postgres", feature = "mysql", feature = "sqlite")) }
     }
 

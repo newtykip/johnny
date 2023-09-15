@@ -1,0 +1,15 @@
+[package]
+authors.workspace = true
+edition.workspace = true
+name = "minecraft"
+publish.workspace = true
+version.workspace = true
+
+[dependencies]
+bytes = "1.5.0"
+common = { path = "../common" }
+poise = { workspace = true }
+reqwest = { workspace = true }
+
+[build-dependencies]
+cfg_aliases = { workspace = true }

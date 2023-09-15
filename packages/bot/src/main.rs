@@ -95,6 +95,9 @@ async fn main() -> Result<()> {
     #[cfg(pride)]
     commands.push(pride::pride());
 
+    #[cfg(minecraft)]
+    commands.push(minecraft::minecraft());
+
     // create the framework
     let framework = Framework::builder()
         .options(FrameworkOptions {

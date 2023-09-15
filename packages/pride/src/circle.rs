@@ -4,7 +4,7 @@ use pride_overlay::{circle as circle_pride, Flags};
 use std::{borrow::Cow, io::Cursor, str::FromStr};
 
 /// Draw a circle with the colours of a pride flag around an image
-#[command(slash_command)]
+#[command(slash_command, category = "image")]
 pub async fn circle(
     ctx: Context<'_>,
     #[description = "The flag to use"]
